@@ -17,7 +17,7 @@
 - [x] Build `TweaksEngine.ps1` — compare snapshot vs profile, iterate tweaks, dispatch to tweak functions.
 - [x] Build `BackupManager.ps1` MVP — registry export to `.reg` + JSON manifest (SRP non-fatal).
 - [x] Build `Reporter.ps1` — console tables, HTML export, score calculation.
-- [x] Write 3 reference tweaks: `remove-bing-news.ps1`, `remove-candy-crush.ps1`, `disable-telemetry.ps1`
+- [x] Write 10 reference tweaks: `remove-bing-news`, `remove-bing-weather`, `remove-candy-crush`, `remove-copilot`, `remove-teams`, `disable-telemetry`, `disable-dmwappush`, `disable-ads-id`, `disable-consent-appraiser`, `disable-ceip-task`
 - [x] Set up Pester test scaffolding.
 - [x] Write tests for: module loading, profile inheritance resolution, score calculation.
 

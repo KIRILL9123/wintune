@@ -8,10 +8,10 @@
     "disable-hibernation"
   ],
   "preserve": [
-    "xbox-app",
-    "xbox-gaming-overlay",
-    "xblauthmanager",
-    "xboxgipsvc"
+    "remove-xbox-app",
+    "remove-xbox-gaming-overlay",
+    "keep-xblauthmanager",
+    "keep-xboxgipsvc"
   ],
   "dangerous": false
 }

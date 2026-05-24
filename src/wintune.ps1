@@ -194,7 +194,8 @@ switch ($Action) {
 
         Write-Progress -Activity "WinTune" -Status "Applying tweaks..." -PercentComplete 50
         $engineResult = Invoke-TweaksEngine -ProfileName $Profile -Snapshot $data.Snapshot `
-            -WhatIf:$WhatIf -Confirm:$Confirm -Dangerous:$Dangerous -StopOnError:$StopOnError
+            -WhatIf:$WhatIf -Confirm:$Confirm -Dangerous:$Dangerous -StopOnError:$StopOnError `
+            -BackupPathOverride $BackupPath
 
         # Recalculate score after changes
         Write-Progress -Activity "WinTune" -Status "Finalizing..." -PercentComplete 90

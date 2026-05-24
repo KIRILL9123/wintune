@@ -1,18 +1,17 @@
 {
-  "version": 1,
+  "version": 2,
   "updated": "2026-05-24",
   "packages": [
     {
-      "id": "bing-news",
+      "id": "remove-bing-news",
       "type": "package",
       "name": "Microsoft.BingNews",
       "detect": "Get-AppxPackage -Name Microsoft.BingNews",
       "buildMin": 22000,
-      "buildMax": 0,
-      "notes": "Bing News app — bundled with Windows 11"
+      "buildMax": 0
     },
     {
-      "id": "bing-weather",
+      "id": "remove-bing-weather",
       "type": "package",
       "name": "Microsoft.BingWeather",
       "detect": "Get-AppxPackage -Name Microsoft.BingWeather",
@@ -20,16 +19,15 @@
       "buildMax": 0
     },
     {
-      "id": "candy-crush",
+      "id": "remove-candy-crush",
       "type": "package",
       "name": "king.com.CandyCrushSaga_*",
       "detect": "Get-AppxPackage -Name *CandyCrushSaga*",
       "buildMin": 22000,
-      "buildMax": 0,
-      "notes": "Candy Crush Saga — pre-installed bloatware"
+      "buildMax": 0
     },
     {
-      "id": "xbox-app",
+      "id": "remove-xbox-app",
       "type": "package",
       "name": "Microsoft.XboxApp",
       "detect": "Get-AppxPackage -Name Microsoft.XboxApp",
@@ -37,7 +35,7 @@
       "buildMax": 0
     },
     {
-      "id": "xbox-gaming-overlay",
+      "id": "remove-xbox-gaming-overlay",
       "type": "package",
       "name": "Microsoft.XboxGamingOverlay*",
       "detect": "Get-AppxPackage -Name Microsoft.XboxGamingOverlay*",
@@ -45,7 +43,7 @@
       "buildMax": 0
     },
     {
-      "id": "onedrive",
+      "id": "remove-onedrive",
       "type": "package",
       "name": "Microsoft.OneDrive*",
       "detect": "Get-AppxPackage -Name Microsoft.OneDrive*",
@@ -53,7 +51,7 @@
       "buildMax": 0
     },
     {
-      "id": "teams",
+      "id": "remove-teams",
       "type": "package",
       "name": "Microsoft.Teams*",
       "detect": "Get-AppxPackage -Name Microsoft.Teams*",
@@ -61,54 +59,49 @@
       "buildMax": 0
     },
     {
-      "id": "copilot",
+      "id": "remove-copilot",
       "type": "package",
       "name": "Microsoft.Copilot*",
       "detect": "Get-AppxPackage -Name Microsoft.Copilot*",
       "buildMin": 22621,
-      "buildMax": 0,
-      "notes": "Windows Copilot — added in 23H2"
+      "buildMax": 0
     }
   ],
   "services": [
     {
-      "id": "diagtrack",
+      "id": "disable-telemetry",
       "type": "service",
       "name": "DiagTrack",
       "detect": "Get-Service -Name DiagTrack -ErrorAction SilentlyContinue",
       "buildMin": 22000,
-      "buildMax": 0,
-      "notes": "Connected User Experiences and Telemetry service"
+      "buildMax": 0
     },
     {
-      "id": "dmwappushservice",
+      "id": "disable-dmwappush",
       "type": "service",
       "name": "dmwappushservice",
       "detect": "Get-Service -Name dmwappushservice -ErrorAction SilentlyContinue",
       "buildMin": 22000,
-      "buildMax": 0,
-      "notes": "Device Management WAP Push service"
+      "buildMax": 0
     },
     {
-      "id": "sysmain",
+      "id": "disable-sysmain",
       "type": "service",
       "name": "SysMain",
       "detect": "Get-Service -Name SysMain -ErrorAction SilentlyContinue",
       "buildMin": 22000,
-      "buildMax": 0,
-      "notes": "SysMain (Superfetch) — can cause high disk usage"
+      "buildMax": 0
     },
     {
-      "id": "wsearch",
+      "id": "disable-wsearch",
       "type": "service",
       "name": "WSearch",
       "detect": "Get-Service -Name WSearch -ErrorAction SilentlyContinue",
       "buildMin": 22000,
-      "buildMax": 0,
-      "notes": "Windows Search indexer"
+      "buildMax": 0
     },
     {
-      "id": "xblauthmanager",
+      "id": "keep-xblauthmanager",
       "type": "service",
       "name": "XblAuthManager",
       "detect": "Get-Service -Name XblAuthManager -ErrorAction SilentlyContinue",
@@ -116,7 +109,7 @@
       "buildMax": 0
     },
     {
-      "id": "xboxgipsvc",
+      "id": "keep-xboxgipsvc",
       "type": "service",
       "name": "XboxGipSvc",
       "detect": "Get-Service -Name XboxGipSvc -ErrorAction SilentlyContinue",
@@ -126,7 +119,7 @@
   ],
   "tasks": [
     {
-      "id": "microsoft-consent-experience",
+      "id": "disable-consent-appraiser",
       "type": "task",
       "name": "Microsoft\\Windows\\Application Experience\\Microsoft Compatibility Appraiser",
       "detect": "Get-ScheduledTask -TaskPath '\\Microsoft\\Windows\\Application Experience\\' -ErrorAction SilentlyContinue",
@@ -134,7 +127,7 @@
       "buildMax": 0
     },
     {
-      "id": "customer-experience-improvement",
+      "id": "disable-ceip-task",
       "type": "task",
       "name": "Microsoft\\Windows\\Customer Experience Improvement Program\\Consolidator",
       "detect": "Get-ScheduledTask -TaskPath '\\Microsoft\\Windows\\Customer Experience Improvement Program\\' -ErrorAction SilentlyContinue",
@@ -144,7 +137,15 @@
   ],
   "registry": [
     {
-      "id": "telemetry-allow-telemetry",
+      "id": "disable-ads-id",
+      "type": "registry",
+      "name": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\AdvertisingInfo\\Enabled",
+      "detect": "Get-ItemProperty -Path 'HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\AdvertisingInfo' -Name 'Enabled' -ErrorAction SilentlyContinue",
+      "buildMin": 22000,
+      "buildMax": 0
+    },
+    {
+      "id": "disable-telemetry-registry-1",
       "type": "registry",
       "name": "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection\\AllowTelemetry",
       "detect": "Get-ItemProperty -Path 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection' -Name 'AllowTelemetry' -ErrorAction SilentlyContinue",
@@ -152,21 +153,22 @@
       "buildMax": 0
     },
     {
-      "id": "telemetry-ti",
+      "id": "disable-telemetry-registry-2",
       "type": "registry",
       "name": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\DataCollection\\AllowTelemetry",
       "detect": "Get-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\DataCollection' -Name 'AllowTelemetry' -ErrorAction SilentlyContinue",
       "buildMin": 22000,
       "buildMax": 0
-    },
+    }
+  ],
+  "commands": [
     {
-      "id": "ads-apps-tailored-experiences",
-      "type": "registry",
-      "name": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\AdvertisingInfo\\Enabled",
-      "detect": "Get-ItemProperty -Path 'HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\AdvertisingInfo' -Name 'Enabled' -ErrorAction SilentlyContinue",
+      "id": "disable-hibernation",
+      "type": "command",
+      "name": "Hibernation",
+      "detect": "powercfg /a | Select-String -Pattern 'Hibernation' -SimpleMatch",
       "buildMin": 22000,
-      "buildMax": 0,
-      "notes": "Let apps use advertising ID"
+      "buildMax": 0
     }
   ]
 }

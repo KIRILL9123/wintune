@@ -6,6 +6,6 @@
     "remove-xbox-app",
     "disable-sysmain"
   ],
-  "preserve": ["onedrive", "teams"],
+  "preserve": ["remove-onedrive", "remove-teams"],
   "dangerous": false
 }

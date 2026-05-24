@@ -1,7 +1,12 @@
 function Get-BackupPath {
-    param([string]$SessionTimestamp)
+    param(
+        [string]$SessionTimestamp,
+        [string]$OverrideBase
+    )
 
-    $base = if ($env:WINTUNE_BACKUP_PATH) {
+    $base = if ($OverrideBase) {
+        $OverrideBase
+    } elseif ($env:WINTUNE_BACKUP_PATH) {
         $env:WINTUNE_BACKUP_PATH
     } else {
         Join-Path $env:LOCALAPPDATA "WinTune" "backups"
@@ -23,11 +28,14 @@ function New-Backup {
         [string]$ProfileName,
 
         [Parameter(Mandatory=$true)]
-        [array]$Changes
+        [array]$Changes,
+
+        [Parameter()]
+        [string]$BackupPathOverride
     )
 
     $timestamp = New-SessionTimestamp
-    $backupDir = Get-BackupPath -SessionTimestamp $timestamp
+    $backupDir = Get-BackupPath -SessionTimestamp $timestamp -OverrideBase $BackupPathOverride
 
     if (-not (Test-Path $backupDir)) {
         $null = New-Item -Path $backupDir -ItemType Directory -Force

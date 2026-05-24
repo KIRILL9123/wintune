@@ -26,6 +26,7 @@ Describe 'Module loading' {
             'Restore-Backup',
             'Invoke-TweaksEngine',
             'Invoke-TweakGeneric',
+            'Read-OriginalValue',
             'Get-Score',
             'Out-ConsoleReport',
             'Out-HtmlReport'
