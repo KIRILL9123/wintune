@@ -23,6 +23,8 @@ function Get-Score {
     foreach ($t in $BloatDatabase.tasks) { $dbTasks[$t.id] = $t }
     $dbRegistry = @{}
     foreach ($r in $BloatDatabase.registry) { $dbRegistry[$r.id] = $r }
+    $dbCommands = @{}
+    foreach ($c in $BloatDatabase.commands) { $dbCommands[$c.id] = $c }
 
     foreach ($id in $TweakIds) {
         $detected = $false
@@ -39,6 +41,8 @@ function Get-Score {
         } elseif ($dbRegistry.ContainsKey($id)) {
             $entry = $dbRegistry[$id]
             $detected = $Snapshot.Registry.PSObject.Properties.Name -contains $id -and $null -ne $Snapshot.Registry.$id
+        } elseif ($dbCommands.ContainsKey($id)) {
+            $detected = Test-CommandDetected -TweakId $id
         }
 
         if ($detected) { $present++ }

@@ -242,7 +242,7 @@ switch ($Action) {
             if ($reply -ne 'yes') { Write-Host "Canceled."; exit 0 }
         }
 
-        $results = Restore-Backup -Session $Session
+        $results = Restore-Backup -Session $Session -BackupPathOverride $BackupPath
 
         if ($OutputJson) {
             Write-Output (ConvertTo-Json @{ Action='Revert'; Session=$Session; Results=$results })

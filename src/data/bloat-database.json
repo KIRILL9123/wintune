@@ -100,22 +100,7 @@
       "buildMin": 22000,
       "buildMax": 0
     },
-    {
-      "id": "keep-xblauthmanager",
-      "type": "service",
-      "name": "XblAuthManager",
-      "detect": "Get-Service -Name XblAuthManager -ErrorAction SilentlyContinue",
-      "buildMin": 22000,
-      "buildMax": 0
-    },
-    {
-      "id": "keep-xboxgipsvc",
-      "type": "service",
-      "name": "XboxGipSvc",
-      "detect": "Get-Service -Name XboxGipSvc -ErrorAction SilentlyContinue",
-      "buildMin": 22000,
-      "buildMax": 0
-    }
+
   ],
   "tasks": [
     {

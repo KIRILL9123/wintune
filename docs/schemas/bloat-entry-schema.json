@@ -13,7 +13,7 @@
     "type": {
       "description": "Type of system item.",
       "type": "string",
-      "enum": ["package", "service", "task", "registry"]
+      "enum": ["package", "service", "task", "registry", "command"]
     },
     "name": {
       "description": "Name or pattern used to detect the item (e.g. 'king.com.CandyCrushSaga_*', 'DiagTrack').",

@@ -6,6 +6,7 @@
 # DANGEROUS: false
 
 function Invoke-RemoveCandyCrush {
+    [CmdletBinding(SupportsShouldProcess=$true)]
     param(
         [switch]$WhatIf,
         [switch]$Confirm

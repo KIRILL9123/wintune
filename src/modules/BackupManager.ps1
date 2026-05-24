@@ -88,10 +88,13 @@ function New-Backup {
 function Restore-Backup {
     param(
         [Parameter(Mandatory=$true)]
-        [string]$Session
+        [string]$Session,
+
+        [Parameter()]
+        [string]$BackupPathOverride
     )
 
-    $backupDir = Get-BackupPath -SessionTimestamp $Session
+    $backupDir = Get-BackupPath -SessionTimestamp $Session -OverrideBase $BackupPathOverride
     $manifestPath = Join-Path $backupDir "manifest.json"
 
     if (-not (Test-Path $manifestPath)) {

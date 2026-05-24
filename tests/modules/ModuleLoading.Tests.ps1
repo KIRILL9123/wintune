@@ -27,6 +27,7 @@ Describe 'Module loading' {
             'Invoke-TweaksEngine',
             'Invoke-TweakGeneric',
             'Read-OriginalValue',
+            'Test-CommandDetected',
             'Get-Score',
             'Out-ConsoleReport',
             'Out-HtmlReport'

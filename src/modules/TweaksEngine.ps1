@@ -81,7 +81,7 @@ function Invoke-TweaksEngine {
             $entry = $dbCommands[$tweakId]
             $tweakType = 'command'
             $tweakName = $entry.name
-            $detected = $null -ne ($entry.detect | Invoke-Expression -ErrorAction SilentlyContinue)
+            $detected = Test-CommandDetected -TweakId $tweakId
         }
 
         if ($detected) {
@@ -279,6 +279,19 @@ function Invoke-TweakGeneric {
                 powercfg /h off *>$null
                 Write-Host "  Disabled: Hibernation (powercfg /h off)"
             }
+        }
+    }
+}
+
+function Test-CommandDetected {
+    param([string]$TweakId)
+
+    switch ($TweakId) {
+        'disable-hibernation' {
+            return $null -ne (powercfg /a 2>$null | Select-String -Pattern 'Hibernation' -SimpleMatch)
+        }
+        default {
+            return $false
         }
     }
 }

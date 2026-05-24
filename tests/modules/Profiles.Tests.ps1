@@ -30,11 +30,24 @@ Describe 'Get-Profile' {
 
     It 'preserve excludes inherited tweaks' {
         $base = Get-Profile -Name 'base'
-        $gaming = Get-Profile -Name 'gaming'
+        $workstation = Get-Profile -Name 'workstation'
 
-        # Gaming preserves xbox-app which is NOT in base, so counts may be equal
-        # At minimum, gaming profile should not crash and return tweaks
-        $gaming.Tweaks.Count | Should -BeGreaterThan 0
+        # base.json includes remove-teams; workstation.json preserves it
+        $workstation.Tweaks -contains 'remove-teams' | Should -Be $false
+
+        # workstation should still inherit non-preserved base tweaks
+        $workstation.Tweaks -contains 'remove-bing-news' | Should -Be $true
+        $workstation.Tweaks -contains 'disable-telemetry' | Should -Be $true
+    }
+
+    It 'inherited tweaks are present in child profile' {
+        $base = Get-Profile -Name 'base'
+        $laptop = Get-Profile -Name 'laptop'
+
+        # laptop inherits base
+        foreach ($tweak in $base.Tweaks) {
+            $laptop.Tweaks -contains $tweak | Should -Be $true -Because "laptop should inherit '$tweak' from base"
+        }
     }
 }
 
