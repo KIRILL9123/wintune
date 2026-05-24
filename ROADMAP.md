@@ -50,9 +50,17 @@
 - [ ] CI: GitHub Action that runs Pester tests on `windows-latest`.
 - [ ] Tag `v0.1.0`.
 
-## Phase 5: Optional TUI (Post-v0.1)
-- [ ] Python wrapper with `textual` for mouse-friendly interface (in `gui/`).
-- [ ] Real-time progress bars and checkboxes.
+## Phase 5: PySide6 GUI Application (Post-v0.1)
+- [ ] Build PySide6 GUI in `gui/` with 6 screens:
+  - Dashboard (profile selector + action buttons).
+  - Audit Report (Debloat Completion Rate + per-tweak checkboxes).
+  - Apply Progress (live progress bar with per-tweak status).
+  - Revert (session history browser + revert confirmation).
+  - Settings (backup path, output path, dangerous mode).
+  - Report Viewer (inline HTML report or browser launch).
+- [ ] Implement `-OutputJson` flag in engine for machine-readable GUI consumption.
+- [ ] Dark theme throughout (Windows 11 dark palette).
+- [ ] App icon (generated separately, stored in `gui/assets/`).
 - [ ] System tray mini-audit reminder (optional, low priority).
 
 ## Phase 6: Community expansion

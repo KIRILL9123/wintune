@@ -24,7 +24,7 @@ Build an open-source, deterministic Windows 11 tuning utility that is safe, audi
 
 ## Tech stack
 - **Runtime**: PowerShell 5.1+ (ships with Windows 11; no user dependencies).
-- **Optional UI layer (gui/)**: Python 3 + `rich`/`textual` for a pretty TUI wrapper in a separate `gui/` folder. Core engine stays PowerShell so it runs on locked-down systems. The `gui/` layer communicates with the core via stdout JSON or saved report files — no tight coupling.
+- **Optional GUI layer (gui/)**: Python 3 + PySide6 (Qt) for a native Windows GUI application in `gui/` folder. Planned for post-v0.1 — core engine powershell must be stable first. The `gui/` layer communicates with the core via `-OutputJson` flag (machine-readable stdout JSON) — no tight coupling. Core must never depend on Python.
 - **Data format**: JSON for profile manifests and bloatware database. PowerShell script files (`.ps1`) for individual tweak implementations.
 - **Tests**: Pester (PowerShell test framework).
 
@@ -52,7 +52,7 @@ wintune/
 │   │   └── minimal.json
 │   └── data/
 │       └── bloat-database.json  # Shared dictionary: App IDs, service names, task paths, registry keys
-├── gui/                         # Optional Python TUI (separate entry point)
+├── gui/                         # Planned PySide6 GUI (post-v0.1, separate entry point)
 ├── tests/
 │   ├── modules/
 │   ├── tweaks/
@@ -212,14 +212,44 @@ Get-ChildItem "$ModuleRoot/*.ps1" | ForEach-Object { . $_.FullName }
 
 This keeps the dependency chain transparent and works without a module install step. Every module is re-loaded on each invocation — fine for a CLI tool that starts and exits.
 
-## UI flow (CLI / TUI)
+## UI flow (CLI)
 1. Pre-flight checks (admin, execution policy, build detection).
-2. Welcome screen — choose mode: `Audit` or `Apply`.
-3. If `Apply` — choose profile: `Gaming`, `Workstation`, `Laptop`, `Minimal`.
-4. Scanner runs, shows live progress.
-5. Report preview — list of changes + predicted score improvement.
-6. Confirm (Y/n) or granular toggle per item (`-WhatIf` shows preview, `-Confirm` prompts per item).
-7. Apply → Backup → Execute → Final report.
+2. User provides `-Action` and `-Profile` flags.
+3. Scanner runs, shows live progress.
+4. Report preview — list of changes + predicted score improvement.
+5. Confirm (Y/n) or granular toggle per item (`-WhatIf` shows preview, `-Confirm` prompts per item).
+6. Apply → Backup → Execute → Final report.
+
+When `-OutputJson` is used (for GUI consumption), all output is written as JSON to stdout — no interactive prompts, no pretty tables. The GUI layer handles all user interaction.
+
+## GUI architecture (planned, post-v0.1)
+
+The GUI is a **PySide6 (Qt)** desktop application in `gui/`. It communicates with the PowerShell engine exclusively via `-OutputJson`:
+- Engine never imports Python modules or calls Python code.
+- GUI never calls PowerShell cmdlets directly.
+- Contract: JSON on stdin/stdout only.
+
+### Planned screens
+1. **Dashboard** — profile selector + action buttons
+2. **Audit Report** — Debloat Completion Rate + per-category breakdown + per-tweak checkboxes
+3. **Apply Progress** — live progress bar with per-tweak status
+4. **Revert** — session history browser + revert confirmation
+5. **Settings** — backup path, output path, dangerous mode toggle
+6. **Report Viewer** — inline HTML report or browser launch
+
+### Why PySide6
+| Approach | Verdict |
+|---|---|
+| `textual` (terminal TUI) | Rejected — we want a real desktop app with native Windows controls |
+| **PySide6 (Qt)** | Chosen — native look, dark theme, Python, stable |
+| Electron | Rejected — 200MB overhead for a tuning utility is absurd |
+| C# WinUI 3 | Rejected — locks us into Windows-only and a different language |
+| tkinter | Rejected — impossible to make modern-looking UI |
+
+### GUI development order
+1. Phase 0-4: PowerShell engine only. No GUI code.
+2. Phase 5: PySide6 GUI app. PowerShell engine must be stable and feature-complete.
+3. The `gui/` folder contains its own `README.md`, `requirements.txt`, and a separate entry point.
 
 ## File naming conventions
 - PowerShell modules: PascalCase (`Scanner.ps1`, `BackupManager.ps1`).

@@ -19,6 +19,7 @@
 | `-Session` | `string` | For `Revert` | Session timestamp in `yyyy-MM-dd_HH-mm-ss` format. Identifies which backup manifest to use. |
 | `-BackupPath` | `string` | No | Override the default backup directory (`$env:LOCALAPPDATA\WinTune\backups\`). |
 | `-OutputDir` | `string` | No | Directory for report output (HTML, JSON). Defaults to `./reports/`. |
+| `-OutputJson` | `switch` | No | Output all results as JSON to stdout. Machine-readable mode for GUI consumption. Disables interactive prompts and pretty tables. When set, `-WhatIf` and `-Confirm` are ignored (GUI handles confirmation). |
 
 ## Actions
 
