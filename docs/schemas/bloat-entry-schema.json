@@ -1,0 +1,44 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/KIRILL9123/wintune/schemas/bloat-entry-schema.json",
+  "title": "WinTune Bloat Database Entry",
+  "description": "A single entry in data/bloat-database.json describing a system item that can be removed or disabled.",
+  "type": "object",
+  "properties": {
+    "id": {
+      "description": "Unique identifier for this entry (kebab-case). Referenced by tweak .ps1 files.",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    },
+    "type": {
+      "description": "Type of system item.",
+      "type": "string",
+      "enum": ["package", "service", "task", "registry"]
+    },
+    "name": {
+      "description": "Name or pattern used to detect the item (e.g. 'king.com.CandyCrushSaga_*', 'DiagTrack').",
+      "type": "string",
+      "minLength": 1
+    },
+    "detect": {
+      "description": "PowerShell command fragment to detect the item. Injected into Scanner.ps1 enumeration.",
+      "type": "string",
+      "minLength": 1
+    },
+    "buildMin": {
+      "description": "Minimum Windows build where this entry exists. 0 = no minimum.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "buildMax": {
+      "description": "Maximum Windows build where this entry exists. 0 = no upper limit.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "notes": {
+      "description": "Additional context (risk notes, known side effects, alternative names).",
+      "type": "string"
+    }
+  },
+  "required": ["id", "type", "name", "detect"]
+}

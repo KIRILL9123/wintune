@@ -1,40 +1,57 @@
 # Roadmap — WinTune
 
 ## Phase 0: Foundation (Week 1)
-- [ ] Create GitHub repo with README + LICENSE.
-- [ ] Set up folder skeleton (`src/`, `tests/`, `docs/`).
+- [x] Create GitHub repo with README + LICENSE.
+- [ ] Set up folder skeleton (`src/`, `tests/`, `docs/`, `gui/`, `logs/`).
+- [ ] Write `wintune.ps1` entry point with dot-source module loading scaffold.
+- [ ] Add pre-flight checks:
+  - Admin rights elevation check (fail early with clear message).
+  - Execution Policy check (warn on `Restricted`/`AllSigned`).
+  - Windows build detection (`[Environment]::OSVersion.Version.Build`).
 - [ ] Build `Scanner.ps1` MVP: enumerate UWP packages, services, scheduled tasks.
-- [ ] Build minimal JSON manifest format for a single profile (e.g., `minimal-profile.json`).
-- [ ] Add Pester test scaffolding.
+- [ ] Build `data/bloat-database.json` with initial entry schema (AppX IDs, service names, task paths, registry keys).
+- [ ] Build `profiles/base.json` — common debloat base profile.
+- [ ] Build one reference profile (e.g., `profiles/minimal.json` with `"inherits": "base"`).
+- [ ] Define the tweak function contract (metadata block, `-WhatIf`/`-Confirm` params, return object).
+- [ ] Build `Profiles.ps1` — load + resolve `inherits` chain (breadth-first, child overrides parent).
+- [ ] Build `TweaksEngine.ps1` — iterate resolved tweak list, load `.ps1`, call function.
+- [ ] Build `BackupManager.ps1` MVP — registry export to `.reg` + JSON manifest (no SRP yet).
+- [ ] Set up Pester test scaffolding.
+- [ ] Write tests for: module loading, profile inheritance resolution, admin check.
 
 ## Phase 1: Audit Engine (Week 2)
 - [ ] Implement profile-to-snapshot comparison logic.
 - [ ] Implement Debloat Completion Rate calculation.
-- [ ] Build console reporter (pretty tables).
+- [ ] Build `Reporter.ps1` (console tables).
+- [ ] Add logging scaffold (Session / Audit / Error log levels).
 - [ ] Add `Audit` CLI entry: `wintune.ps1 -Action Audit -Profile Minimal`.
-- [ ] Write first 20 tweak definitions (privacy + debloat).
+- [ ] Write first 10 tweak definitions (privacy + debloat).
+- [ ] Write Pester tests for Scanner, Reporter, and each tweak.
 
 ## Phase 2: Safe Apply (Week 3)
-- [ ] Build `BackupManager.ps1` (registry export + restore point).
-- [ ] Build `TweaksEngine.ps1` with idempotent apply logic.
-- [ ] Implement `Apply` CLI entry with `--WhatIf` preview.
-- [ ] Add granular toggles: user can uncheck specific items before applying.
-- [ ] Write 30 more tweak definitions (performance + UI).
+- [ ] Complete `BackupManager.ps1` — add SRP as non-fatal secondary backup.
+- [ ] Implement idempotent apply logic (skip already-applied tweaks).
+- [ ] Implement `Apply` CLI entry with `-WhatIf` preview and `-Confirm` per-item prompting.
+- [ ] Add granular toggles: user can uncheck specific items before confirming.
+- [ ] Wire `-Dangerous` flag for security-sensitive tweaks.
+- [ ] Write 20 more tweak definitions (performance + UI).
+- [ ] Write Pester tests for TweaksEngine + BackupManager.
 
 ## Phase 3: Profiles & Scoring (Week 4)
 - [ ] Finalize 4 default profiles: `Gaming`, `Workstation`, `Laptop`, `Minimal`.
 - [ ] Add informational delta metrics (RAM, boot time, process count).
-- [ ] HTML report export.
+- [ ] HTML report export via `Reporter.ps1`.
 - [ ] Revert command: `wintune.ps1 -Action Revert -Session <timestamp>`.
+- [ ] Write integration tests (mock-based).
 
 ## Phase 4: Polish & Release v0.1 (Week 5)
-- [ ] PowerShell error handling and logging.
+- [ ] PowerShell error handling and structured logging throughout.
 - [ ] Documentation: usage GIFs, tweak contribution guide.
 - [ ] CI: GitHub Action that runs Pester tests on `windows-latest`.
 - [ ] Tag `v0.1.0`.
 
 ## Phase 5: Optional TUI (Post-v0.1)
-- [ ] Python wrapper with `textual` for mouse-friendly interface.
+- [ ] Python wrapper with `textual` for mouse-friendly interface (in `gui/`).
 - [ ] Real-time progress bars and checkboxes.
 - [ ] System tray mini-audit reminder (optional, low priority).
 

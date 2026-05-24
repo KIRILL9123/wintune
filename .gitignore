@@ -1,0 +1,30 @@
+# WinTune — .gitignore
+
+# Logs
+logs/
+*.log
+
+# Backups (stored in $env:LOCALAPPDATA\WinTune\backups\ by default)
+backups/
+
+# Python GUI layer
+gui/__pycache__/
+gui/venv/
+gui/*.pyc
+gui/.python-version
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+*.swp
+*.swo
+*~
+.vscode/settings.json
+
+# PowerShell
+*.ps1xml
+*.psd1
+*.psm1  # We use dot-source, not modules

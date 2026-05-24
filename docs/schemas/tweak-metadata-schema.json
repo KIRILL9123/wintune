@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/KIRILL9123/wintune/schemas/tweak-metadata-schema.json",
+  "title": "WinTune Tweak Metadata",
+  "description": "Schema for the embedded comment block at the top of each tweak .ps1 file. Parsed by TweaksEngine via regex.",
+  "type": "object",
+  "properties": {
+    "TWEAK": {
+      "description": "Tweak ID (kebab-case). Must match the filename (without .ps1).",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    },
+    "CATEGORY": {
+      "description": "Tweak category. Must match a subdirectory under src/tweaks/.",
+      "type": "string",
+      "enum": ["privacy", "performance", "ui", "debloat"]
+    },
+    "DESCRIPTION": {
+      "description": "One-line description of what this tweak does.",
+      "type": "string",
+      "minLength": 1
+    },
+    "BUILD_MIN": {
+      "description": "Minimum Windows build number where this tweak applies (e.g. 22000 for Win11 21H2). 0 = no minimum.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "BUILD_MAX": {
+      "description": "Maximum Windows build number where this tweak applies. 0 = no upper limit.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "DANGEROUS": {
+      "description": "If true, this tweak affects security settings (Defender, UAC, etc.) and requires the -Dangerous CLI flag.",
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": ["TWEAK", "CATEGORY", "DESCRIPTION"]
+}

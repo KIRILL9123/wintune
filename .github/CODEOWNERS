@@ -1,0 +1,13 @@
+# WinTune — CODEOWNERS
+
+# Default owner for the whole repo
+* @KIRILL9123
+
+# Core engine — project owner reviews every module change
+/src/modules/ @KIRILL9123
+
+# Profiles — project owner approves profile structure and defaults
+/src/profiles/ @KIRILL9123
+
+# Schemas — changes to contracts require project owner
+/docs/schemas/ @KIRILL9123

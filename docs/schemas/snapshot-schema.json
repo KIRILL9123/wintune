@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/KIRILL9123/wintune/schemas/snapshot-schema.json",
+  "title": "WinTune System State Snapshot",
+  "description": "Output of Scanner.ps1 — a complete picture of the current system state for comparison against a profile.",
+  "type": "object",
+  "properties": {
+    "timestamp": {
+      "description": "ISO 8601 timestamp when the snapshot was taken.",
+      "type": "string",
+      "format": "date-time"
+    },
+    "windowsBuild": {
+      "description": "Windows build number from [Environment]::OSVersion.Version.Build.",
+      "type": "integer"
+    },
+    "packages": {
+      "description": "List of installed UWP packages (PackageFullName or Name).",
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "services": {
+      "description": "List of installed services (Name, StartType, Status).",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "startType": { "type": "string", "enum": ["Automatic", "Manual", "Disabled"] },
+          "status": { "type": "string", "enum": ["Running", "Stopped"] }
+        },
+        "required": ["name", "startType", "status"]
+      }
+    },
+    "tasks": {
+      "description": "List of scheduled task paths.",
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "registry": {
+      "description": "Map of registry paths to key-value pairs that WinTune cares about.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": { "type": ["string", "integer", "boolean"] }
+      }
+    },
+    "metrics": {
+      "description": "Informational system metrics (not part of scoring).",
+      "type": "object",
+      "properties": {
+        "idleRamMB": { "type": "integer" },
+        "processCount": { "type": "integer" },
+        "bootTimeSeconds": { "type": "integer" }
+      }
+    }
+  },
+  "required": ["timestamp", "windowsBuild", "packages", "services", "tasks", "registry"]
+}

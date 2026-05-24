@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/KIRILL9123/wintune/schemas/backup-manifest-schema.json",
+  "title": "WinTune Backup Manifest",
+  "description": "JSON manifest created by BackupManager.ps1 for each apply session. Used by Revert-Session to undo changes.",
+  "type": "object",
+  "properties": {
+    "session": {
+      "description": "Session timestamp (yyyy-MM-dd_HH-mm-ss). Used as the -Session parameter for revert.",
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}_\\d{2}-\\d{2}-\\d{2}$"
+    },
+    "profile": {
+      "description": "Name of the profile that was applied.",
+      "type": "string"
+    },
+    "createdAt": {
+      "description": "ISO 8601 timestamp of backup creation.",
+      "type": "string",
+      "format": "date-time"
+    },
+    "restorePoint": {
+      "description": "System Restore Point name, if successfully created. Null if unavailable or failed.",
+      "type": ["string", "null"]
+    },
+    "registryBackup": {
+      "description": "Path to the .reg file containing exported registry keys.",
+      "type": "string"
+    },
+    "changes": {
+      "description": "Ordered list of changes made during the session. Reverted in reverse order.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "tweakId": { "type": "string" },
+          "type": { "type": "string", "enum": ["package", "service", "task", "registry"] },
+          "name": { "type": "string", "description": "Name of the affected item." },
+          "originalValue": { "description": "Original value before change (type varies)." },
+          "newValue": { "description": "Value after the tweak was applied." },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "success": { "type": "boolean" },
+          "error": { "type": "string", "description": "Error message if success is false." }
+        },
+        "required": ["tweakId", "type", "name", "originalValue", "newValue", "timestamp", "success"]
+      }
+    }
+  },
+  "required": ["session", "profile", "createdAt", "changes"]
+}
