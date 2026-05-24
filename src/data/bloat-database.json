@@ -1,0 +1,172 @@
+{
+  "version": 1,
+  "updated": "2026-05-24",
+  "packages": [
+    {
+      "id": "bing-news",
+      "type": "package",
+      "name": "Microsoft.BingNews",
+      "detect": "Get-AppxPackage -Name Microsoft.BingNews",
+      "buildMin": 22000,
+      "buildMax": 0,
+      "notes": "Bing News app — bundled with Windows 11"
+    },
+    {
+      "id": "bing-weather",
+      "type": "package",
+      "name": "Microsoft.BingWeather",
+      "detect": "Get-AppxPackage -Name Microsoft.BingWeather",
+      "buildMin": 22000,
+      "buildMax": 0
+    },
+    {
+      "id": "candy-crush",
+      "type": "package",
+      "name": "king.com.CandyCrushSaga_*",
+      "detect": "Get-AppxPackage -Name *CandyCrushSaga*",
+      "buildMin": 22000,
+      "buildMax": 0,
+      "notes": "Candy Crush Saga — pre-installed bloatware"
+    },
+    {
+      "id": "xbox-app",
+      "type": "package",
+      "name": "Microsoft.XboxApp",
+      "detect": "Get-AppxPackage -Name Microsoft.XboxApp",
+      "buildMin": 22000,
+      "buildMax": 0
+    },
+    {
+      "id": "xbox-gaming-overlay",
+      "type": "package",
+      "name": "Microsoft.XboxGamingOverlay*",
+      "detect": "Get-AppxPackage -Name Microsoft.XboxGamingOverlay*",
+      "buildMin": 22000,
+      "buildMax": 0
+    },
+    {
+      "id": "onedrive",
+      "type": "package",
+      "name": "Microsoft.OneDrive*",
+      "detect": "Get-AppxPackage -Name Microsoft.OneDrive*",
+      "buildMin": 22000,
+      "buildMax": 0
+    },
+    {
+      "id": "teams",
+      "type": "package",
+      "name": "Microsoft.Teams*",
+      "detect": "Get-AppxPackage -Name Microsoft.Teams*",
+      "buildMin": 22000,
+      "buildMax": 0
+    },
+    {
+      "id": "copilot",
+      "type": "package",
+      "name": "Microsoft.Copilot*",
+      "detect": "Get-AppxPackage -Name Microsoft.Copilot*",
+      "buildMin": 22621,
+      "buildMax": 0,
+      "notes": "Windows Copilot — added in 23H2"
+    }
+  ],
+  "services": [
+    {
+      "id": "diagtrack",
+      "type": "service",
+      "name": "DiagTrack",
+      "detect": "Get-Service -Name DiagTrack -ErrorAction SilentlyContinue",
+      "buildMin": 22000,
+      "buildMax": 0,
+      "notes": "Connected User Experiences and Telemetry service"
+    },
+    {
+      "id": "dmwappushservice",
+      "type": "service",
+      "name": "dmwappushservice",
+      "detect": "Get-Service -Name dmwappushservice -ErrorAction SilentlyContinue",
+      "buildMin": 22000,
+      "buildMax": 0,
+      "notes": "Device Management WAP Push service"
+    },
+    {
+      "id": "sysmain",
+      "type": "service",
+      "name": "SysMain",
+      "detect": "Get-Service -Name SysMain -ErrorAction SilentlyContinue",
+      "buildMin": 22000,
+      "buildMax": 0,
+      "notes": "SysMain (Superfetch) — can cause high disk usage"
+    },
+    {
+      "id": "wsearch",
+      "type": "service",
+      "name": "WSearch",
+      "detect": "Get-Service -Name WSearch -ErrorAction SilentlyContinue",
+      "buildMin": 22000,
+      "buildMax": 0,
+      "notes": "Windows Search indexer"
+    },
+    {
+      "id": "xblauthmanager",
+      "type": "service",
+      "name": "XblAuthManager",
+      "detect": "Get-Service -Name XblAuthManager -ErrorAction SilentlyContinue",
+      "buildMin": 22000,
+      "buildMax": 0
+    },
+    {
+      "id": "xboxgipsvc",
+      "type": "service",
+      "name": "XboxGipSvc",
+      "detect": "Get-Service -Name XboxGipSvc -ErrorAction SilentlyContinue",
+      "buildMin": 22000,
+      "buildMax": 0
+    }
+  ],
+  "tasks": [
+    {
+      "id": "microsoft-consent-experience",
+      "type": "task",
+      "name": "Microsoft\\Windows\\Application Experience\\Microsoft Compatibility Appraiser",
+      "detect": "Get-ScheduledTask -TaskPath '\\Microsoft\\Windows\\Application Experience\\' -ErrorAction SilentlyContinue",
+      "buildMin": 22000,
+      "buildMax": 0
+    },
+    {
+      "id": "customer-experience-improvement",
+      "type": "task",
+      "name": "Microsoft\\Windows\\Customer Experience Improvement Program\\Consolidator",
+      "detect": "Get-ScheduledTask -TaskPath '\\Microsoft\\Windows\\Customer Experience Improvement Program\\' -ErrorAction SilentlyContinue",
+      "buildMin": 22000,
+      "buildMax": 0
+    }
+  ],
+  "registry": [
+    {
+      "id": "telemetry-allow-telemetry",
+      "type": "registry",
+      "name": "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection\\AllowTelemetry",
+      "detect": "Get-ItemProperty -Path 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection' -Name 'AllowTelemetry' -ErrorAction SilentlyContinue",
+      "buildMin": 22000,
+      "buildMax": 0
+    },
+    {
+      "id": "telemetry-ti",
+      "type": "registry",
+      "name": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\DataCollection\\AllowTelemetry",
+      "detect": "Get-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\DataCollection' -Name 'AllowTelemetry' -ErrorAction SilentlyContinue",
+      "buildMin": 22000,
+      "buildMax": 0
+    },
+    {
+      "id": "ads-apps-tailored-experiences",
+      "type": "registry",
+      "name": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\AdvertisingInfo\\Enabled",
+      "detect": "Get-ItemProperty -Path 'HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\AdvertisingInfo' -Name 'Enabled' -ErrorAction SilentlyContinue",
+      "buildMin": 22000,
+      "buildMax": 0,
+      "notes": "Let apps use advertising ID"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "name": "laptop",
+  "description": "Optimized for battery life. Disables background apps, search indexing, animations, and telemetry.",
+  "inherits": ["base"],
+  "tweaks": [
+    "disable-sysmain",
+    "disable-wsearch",
+    "disable-hibernation"
+  ],
+  "preserve": [],
+  "dangerous": false
+}

@@ -2,22 +2,24 @@
 
 ## Phase 0: Foundation (Week 1)
 - [x] Create GitHub repo with README + LICENSE.
-- [ ] Set up folder skeleton (`src/`, `tests/`, `docs/`, `gui/`, `logs/`).
-- [ ] Write `wintune.ps1` entry point with dot-source module loading scaffold.
-- [ ] Add pre-flight checks:
+- [x] Set up folder skeleton (`src/`, `tests/`, `docs/`, `gui/`, `logs/`).
+- [x] Write `wintune.ps1` entry point with dot-source module loading scaffold.
+- [x] Add pre-flight checks:
   - Admin rights elevation check (fail early with clear message).
   - Execution Policy check (warn on `Restricted`/`AllSigned`).
   - Windows build detection (`[Environment]::OSVersion.Version.Build`).
-- [ ] Build `Scanner.ps1` MVP: enumerate UWP packages, services, scheduled tasks.
-- [ ] Build `data/bloat-database.json` with initial entry schema (AppX IDs, service names, task paths, registry keys).
-- [ ] Build `profiles/base.json` — common debloat base profile.
-- [ ] Build one reference profile (e.g., `profiles/minimal.json` with `"inherits": "base"`).
-- [ ] Define the tweak function contract (metadata block, `-WhatIf`/`-Confirm` params, return object).
-- [ ] Build `Profiles.ps1` — load + resolve `inherits` chain (breadth-first, child overrides parent).
-- [ ] Build `TweaksEngine.ps1` — iterate resolved tweak list, load `.ps1`, call function.
-- [ ] Build `BackupManager.ps1` MVP — registry export to `.reg` + JSON manifest (no SRP yet).
-- [ ] Set up Pester test scaffolding.
-- [ ] Write tests for: module loading, profile inheritance resolution, admin check.
+- [x] Build `Scanner.ps1` MVP: enumerate UWP packages, services, scheduled tasks.
+- [x] Build `data/bloat-database.json` with initial entry schema (AppX IDs, service names, task paths, registry keys).
+- [x] Build `profiles/base.json` — common debloat base profile.
+- [x] Build all 4 reference profiles (`gaming.json`, `workstation.json`, `laptop.json`, `minimal.json` with `"inherits"` chain)
+- [x] Define the tweak function contract (metadata block, `-WhatIf`/`-Confirm` params, return object).
+- [x] Build `Profiles.ps1` — load + resolve `inherits` chain (breadth-first, child overrides parent).
+- [x] Build `TweaksEngine.ps1` — compare snapshot vs profile, iterate tweaks, dispatch to tweak functions.
+- [x] Build `BackupManager.ps1` MVP — registry export to `.reg` + JSON manifest (SRP non-fatal).
+- [x] Build `Reporter.ps1` — console tables, HTML export, score calculation.
+- [x] Write 3 reference tweaks: `remove-bing-news.ps1`, `remove-candy-crush.ps1`, `disable-telemetry.ps1`
+- [x] Set up Pester test scaffolding.
+- [x] Write tests for: module loading, profile inheritance resolution, score calculation.
 
 ## Phase 1: Audit Engine (Week 2)
 - [ ] Implement profile-to-snapshot comparison logic.

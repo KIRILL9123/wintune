@@ -1,0 +1,11 @@
+{
+  "name": "workstation",
+  "description": "Balanced profile. Removes bloat and telemetry but keeps productivity features (Search, OneDrive optional).",
+  "inherits": ["base"],
+  "tweaks": [
+    "remove-xbox-app",
+    "disable-sysmain"
+  ],
+  "preserve": ["onedrive", "teams"],
+  "dangerous": false
+}

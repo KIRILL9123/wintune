@@ -1,0 +1,17 @@
+{
+  "name": "gaming",
+  "description": "Optimized for gaming. Keeps Xbox services, Game Bar; strips telemetry, background apps, and UI animations.",
+  "inherits": ["base"],
+  "tweaks": [
+    "disable-sysmain",
+    "disable-wsearch",
+    "disable-hibernation"
+  ],
+  "preserve": [
+    "xbox-app",
+    "xbox-gaming-overlay",
+    "xblauthmanager",
+    "xboxgipsvc"
+  ],
+  "dangerous": false
+}

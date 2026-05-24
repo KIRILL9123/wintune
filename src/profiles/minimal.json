@@ -1,0 +1,13 @@
+{
+  "name": "minimal",
+  "description": "Maximum debloat. Removes everything non-essential including Xbox, OneDrive, Search, and SysMain.",
+  "inherits": ["base"],
+  "tweaks": [
+    "remove-xbox-app",
+    "remove-onedrive",
+    "disable-sysmain",
+    "disable-wsearch"
+  ],
+  "preserve": [],
+  "dangerous": false
+}

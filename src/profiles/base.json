@@ -1,0 +1,19 @@
+{
+  "name": "base",
+  "description": "Common debloat inherited by all profiles. Removes universal bloatware, disables telemetry and ads.",
+  "inherits": null,
+  "tweaks": [
+    "remove-bing-news",
+    "remove-bing-weather",
+    "remove-candy-crush",
+    "remove-copilot",
+    "remove-teams",
+    "disable-telemetry",
+    "disable-dmwappush",
+    "disable-ads-id",
+    "disable-consent-appraiser",
+    "disable-ceip-task"
+  ],
+  "preserve": [],
+  "dangerous": false
+}
