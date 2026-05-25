@@ -102,5 +102,168 @@ Describe 'Reporter module' {
             $result = Get-Score -Snapshot $script:Snapshot -TweakIds @() -BloatDatabase $script:BloatDb
             $result.Score | Should Be 100
         }
+
+        It 'returns 100 for null tweak list' {
+            $result = Get-Score -Snapshot $script:Snapshot -TweakIds $null -BloatDatabase $script:BloatDb
+            $result.Score | Should Be 100
+        }
+
+        It 'handles null Packages in snapshot' {
+            $nullPkgSnapshot = [PSCustomObject]@{
+                Packages = $null
+                Services = @(
+                    [PSCustomObject]@{ Name='DiagTrack'; DisplayName='DiagTrack'; StartType='Automatic'; Status='Running' }
+                )
+                Tasks    = @()
+                Registry = @{}
+            }
+            $result = Get-Score -Snapshot $nullPkgSnapshot -TweakIds $script:TweakIds -BloatDatabase $script:BloatDb
+            $result.Score | Should Be 50
+            $result.Present | Should Be 1
+        }
+
+        It 'handles null Services in snapshot' {
+            $nullSvcSnapshot = [PSCustomObject]@{
+                Packages = @(
+                    [PSCustomObject]@{ Name='Microsoft.BingNews'; PackageFullName='...'; Publisher='...'; InstallLocation='...' }
+                )
+                Services = $null
+                Tasks    = @()
+                Registry = @{}
+            }
+            $result = Get-Score -Snapshot $nullSvcSnapshot -TweakIds $script:TweakIds -BloatDatabase $script:BloatDb
+            $result.Score | Should Be 50
+            $result.Present | Should Be 1
+        }
+
+        It 'handles null Tasks in snapshot' {
+            $nullTaskSnapshot = [PSCustomObject]@{
+                Packages = @()
+                Services = @()
+                Tasks    = $null
+                Registry = @{}
+            }
+            $result = Get-Score -Snapshot $nullTaskSnapshot -TweakIds @() -BloatDatabase $script:BloatDb
+            $result.Score | Should Be 100
+        }
+
+        It 'handles null Registry in snapshot' {
+            $nullRegSnapshot = [PSCustomObject]@{
+                Packages = @()
+                Services = @()
+                Tasks    = @()
+                Registry = $null
+            }
+            $result = Get-Score -Snapshot $nullRegSnapshot -TweakIds @() -BloatDatabase $script:BloatDb
+            $result.Score | Should Be 100
+        }
+
+        It 'handles missing sections in BloatDatabase' {
+            $minimalDb = [PSCustomObject]@{ packages = @(); services = @(); tasks = @(); registry = @(); commands = @() }
+            $result = Get-Score -Snapshot $script:Snapshot -TweakIds $script:TweakIds -BloatDatabase $minimalDb
+            $result.Score | Should Be 100
+            $result.Present | Should Be 0
+        }
+
+        It 'handles BloatDatabase with null sections' {
+            $nullSectionDb = [PSCustomObject]@{ packages = $null; services = $null; tasks = $null; registry = $null; commands = $null }
+            $result = Get-Score -Snapshot $script:Snapshot -TweakIds $script:TweakIds -BloatDatabase $nullSectionDb
+            $result.Score | Should Be 100
+            $result.Present | Should Be 0
+        }
+
+        It 'returns proper structure for all results' {
+            $result = Get-Score -Snapshot $script:Snapshot -TweakIds $script:TweakIds -BloatDatabase $script:BloatDb
+            $result.Total   | Should Be 2
+            $result.Present | Should Be 2
+            $result.Removed | Should Be 0
+            $result.Score   | Should Be 0
+        }
+
+        It 'handles snapshot without Registry property' {
+            $noRegSnapshot = [PSCustomObject]@{
+                Packages = @()
+                Services = @()
+                Tasks    = @()
+            }
+            $result = Get-Score -Snapshot $noRegSnapshot -TweakIds @() -BloatDatabase $script:BloatDb
+            $result.Score | Should Be 100
+        }
+
+        It 'handles snapshot without Tasks property' {
+            $noTaskSnapshot = [PSCustomObject]@{
+                Packages = @()
+                Services = @()
+                Registry = @{}
+            }
+            $result = Get-Score -Snapshot $noTaskSnapshot -TweakIds @() -BloatDatabase $script:BloatDb
+            $result.Score | Should Be 100
+        }
+    }
+
+    Context 'Out-ConsoleReport edge cases' {
+        $baseSnap = [PSCustomObject]@{ Packages=@(); Services=@(); Tasks=@(); Registry=@{}; WindowsBuild=22621; Metrics=[PSCustomObject]@{ IdleRamMB=0; ProcessCount=0 } }
+        $baseScore = [PSCustomObject]@{ Total=0; Present=0; Removed=0; Score=100 }
+        $baseProfile = [PSCustomObject]@{ Name='test'; Description='test'; Tweaks=@() }
+
+        It 'does not throw with null Metrics in snapshot' {
+            $snap = [PSCustomObject]@{ Packages=@(); Services=@(); Tasks=@(); Registry=@{}; WindowsBuild=22621; Metrics=$null }
+            { Out-ConsoleReport -Score $baseScore -Snapshot $snap -Profile $baseProfile -ErrorAction SilentlyContinue } | Should Not Throw
+        }
+
+        It 'does not throw with null Changes' {
+            { Out-ConsoleReport -Score $baseScore -Snapshot $baseSnap -Profile $baseProfile -Changes $null } | Should Not Throw
+        }
+
+        It 'does not throw with empty Profile name' {
+            $noNameProfile = [PSCustomObject]@{ Name=$null; Description=''; Tweaks=@() }
+            { Out-ConsoleReport -Score $baseScore -Snapshot $baseSnap -Profile $noNameProfile } | Should Not Throw
+        }
+
+        It 'does not throw with null Score.Score and Score.Total' {
+            $badScore = [PSCustomObject]@{ Total=$null; Present=$null; Removed=$null; Score=$null }
+            { Out-ConsoleReport -Score $badScore -Snapshot $baseSnap -Profile $baseProfile -ErrorAction SilentlyContinue } | Should Not Throw
+        }
+
+        It 'does not throw with null Snapshot.Packages and Snapshot.Services' {
+            $nullPropSnap = [PSCustomObject]@{ Packages=$null; Services=$null; Tasks=$null; Registry=$null; WindowsBuild=22621; Metrics=[PSCustomObject]@{ IdleRamMB=0; ProcessCount=0 } }
+            { Out-ConsoleReport -Score $baseScore -Snapshot $nullPropSnap -Profile $baseProfile -ErrorAction SilentlyContinue } | Should Not Throw
+        }
+    }
+
+    Context 'Out-HtmlReport edge cases' {
+        $baseSnap = [PSCustomObject]@{ Packages=@(); Services=@(); Tasks=@(); Registry=@{}; WindowsBuild=22621; Metrics=[PSCustomObject]@{ IdleRamMB=0; ProcessCount=0 } }
+        $baseScore = [PSCustomObject]@{ Total=0; Present=0; Removed=0; Score=100 }
+        $baseProfile = [PSCustomObject]@{ Name='test'; Description='test'; Tweaks=@() }
+
+        It 'does not throw with null Metrics in snapshot' {
+            $snap = [PSCustomObject]@{ Packages=@(); Services=@(); Tasks=@(); Registry=@{}; WindowsBuild=22621; Metrics=$null }
+            { Out-HtmlReport -Score $baseScore -Snapshot $snap -Profile $baseProfile } | Should Not Throw
+        }
+
+        It 'does not throw with null Changes' {
+            { Out-HtmlReport -Score $baseScore -Snapshot $baseSnap -Profile $baseProfile -Changes $null } | Should Not Throw
+        }
+
+        It 'does not throw with empty Profile name' {
+            $noNameProfile = [PSCustomObject]@{ Name=$null; Description=''; Tweaks=@() }
+            { Out-HtmlReport -Score $baseScore -Snapshot $baseSnap -Profile $noNameProfile } | Should Not Throw
+        }
+
+        It 'does not throw with null Score.Score and Score.Total' {
+            $badScore = [PSCustomObject]@{ Total=$null; Present=$null; Removed=$null; Score=$null }
+            { Out-HtmlReport -Score $badScore -Snapshot $baseSnap -Profile $baseProfile } | Should Not Throw
+        }
+
+        It 'does not throw with null Snapshot.Packages and Snapshot.Services' {
+            $nullPropSnap = [PSCustomObject]@{ Packages=$null; Services=$null; Tasks=$null; Registry=$null; WindowsBuild=22621; Metrics=[PSCustomObject]@{ IdleRamMB=0; ProcessCount=0 } }
+            { Out-HtmlReport -Score $baseScore -Snapshot $nullPropSnap -Profile $baseProfile } | Should Not Throw
+        }
+
+        It 'returns valid HTML string' {
+            $html = Out-HtmlReport -Score $baseScore -Snapshot $baseSnap -Profile $baseProfile
+            $html | Should Match '<!DOCTYPE html>'
+            $html | Should Match '</html>'
+        }
     }
 }

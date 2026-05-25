@@ -39,6 +39,12 @@ Object:
 - `Session` (string)
 - `Results` (array)
 
+## Exit codes
+| Code | Condition |
+|------|-----------|
+| `0`  | Success — action completed normally |
+| `1`  | Error — missing/invalid argument, admin required, I/O failure |
+
 ## Compatibility policy
 - Existing fields cannot be removed or renamed in `v0.1`.
 - New fields must be additive and optional.

@@ -9,18 +9,21 @@
 - [x] Initial tweak set (10 reference tweaks).
 - [x] Pester scaffolding and baseline tests.
 
-## Phase 1: Audit Baseline + Data Gate
-- [ ] Freeze `Audit` contract: CLI inputs, JSON output shape, and exit-code behavior.
-- [ ] Stabilize `Scanner` and `Reporter` for edge cases (empty collections, missing items, null snapshots).
-- [ ] Add minimal logging scaffold (`session`, `audit`, `error` files and directory convention).
-- [ ] Add minimal schema gate for `src/data/bloat-database.json` (local validation + CI validation).
-- [ ] Add CI smoke checks for CLI read-only paths (`List` and `List -OutputJson`).
-- [ ] Add/extend unit tests for Scanner/Reporter contract safety.
+## Phase 1: Audit Baseline + Data Gate (Completed)
+- [x] Freeze `Audit` contract: CLI inputs, JSON output shape, and exit-code behavior.
+- [x] Stabilize `Scanner` and `Reporter` for edge cases (empty collections, missing items, null snapshots).
+- [x] Add minimal logging scaffold (`session`, `audit`, `error` files and directory convention).
+- [x] Add minimal schema gate for `src/data/bloat-database.json` (local validation + CI validation).
+- [x] Add CI smoke checks for CLI read-only paths (`List` and `List -OutputJson`).
+- [x] Add/extend unit tests for Scanner/Reporter contract safety.
 
 **DoD**
 - `Audit` is deterministic for same snapshot/profile inputs.
 - `bloat-database.json` passes schema validation in local check and CI.
-- Pester unit tests and CLI smoke checks are green in CI.
+- Pester unit tests (58) and CLI smoke checks are green in CI.
+- Logging wired into Audit/Apply/Revert with session, audit, error files.
+- Exit codes documented (`0` success, `1` error) and tested.
+- `-OutputJson` contract frozen: specs for every action + compliance test.
 
 ## Phase 2: Safe Apply Core
 - [ ] Make `Apply` strictly idempotent (repeat run has no unsafe side-effects).

@@ -97,8 +97,6 @@ if ($requiresAdmin -and -not (Test-Admin)) {
 
 $null = Test-ExecutionPolicy
 $script:WindowsBuild = Get-WindowsBuild
-$script:LogSession = Initialize-LogSession -Action $Action
-Write-SessionEvent -SessionFile $script:LogSession.SessionFile -Level "INFO" -Message "Action '$Action' started."
 
 function Get-AuditData {
     param(
@@ -137,8 +135,6 @@ switch ($Action) {
             $profiles | Format-Table -AutoSize
         }
 
-        Write-SessionEvent -SessionFile $script:LogSession.SessionFile -Level "INFO" -Message "List action completed."
-
         exit 0
     }
 
@@ -148,18 +144,25 @@ switch ($Action) {
             exit 1
         }
 
+        $session = Initialize-LogSession -Action $Action
+        Write-SessionEvent -SessionFile $session.SessionFile -Level Info -Message "Audit started for profile '$Profile'"
+
         $data = Get-AuditData -ProfileName $Profile
+
+        Write-SessionEvent -SessionFile $session.SessionFile -Level Info -Message "Audit result: $($data.Score.Removed)/$($data.Score.Total) removed, score=$($data.Score.Score)%"
 
         if ($OutputJson) {
             $result = [PSCustomObject]@{
-                Action   = 'Audit'
-                Profile  = $data.Profile
-                Snapshot = $data.Snapshot
-                Score    = $data.Score
+                Action    = 'Audit'
+                Profile   = $data.Profile
+                Snapshot  = $data.Snapshot
+                Score     = $data.Score
+                SessionId = $session.SessionId
             }
             Write-Output ($result | ConvertTo-Json -Depth 10)
         } else {
             Out-ConsoleReport -Score $data.Score -Snapshot $data.Snapshot -Profile $data.Profile
+            Write-Host "Session log: $($session.SessionDir)"
         }
 
         if ($OutputDir) {
@@ -170,8 +173,6 @@ switch ($Action) {
             $null = Out-HtmlReport -Score $data.Score -Snapshot $data.Snapshot -Profile $data.Profile -OutputPath $htmlPath
         }
 
-        Write-SessionEvent -SessionFile $script:LogSession.SessionFile -Level "INFO" -Message "Audit action completed."
-
         exit 0
     }
 
@@ -180,6 +181,11 @@ switch ($Action) {
             Write-Error "-Profile is required."
             exit 1
         }
+
+        $session = Initialize-LogSession -Action $Action
+        Write-SessionEvent -SessionFile $session.SessionFile -Level Info -Message "Apply started for profile '$Profile'"
+
+        $needsEngine = $true
 
         if ($OutputJson) {
             $WhatIf = $false
@@ -191,58 +197,65 @@ switch ($Action) {
         if ($WhatIf) {
             if ($OutputJson) {
                 $result = [PSCustomObject]@{
-                    Action  = 'WhatIf'
-                    Profile = $data.Profile
-                    Score   = $data.Score
+                    Action    = 'WhatIf'
+                    Profile   = $data.Profile
+                    Score     = $data.Score
+                    SessionId = $session.SessionId
                 }
                 Write-Output ($result | ConvertTo-Json -Depth 10)
             } else {
                 Write-Host ""
                 Write-Host "[WhatIf] Profile '$Profile' would clean $($data.Score.Present) remaining items."
                 Write-Host "[WhatIf] Score would improve from $($data.Score.Score)% to 100%."
+                Write-Host "Session log: $($session.SessionDir)"
             }
 
-            exit 0
+            Write-SessionEvent -SessionFile $session.SessionFile -Level Info -Message "WhatIf: $($data.Score.Present) items would be cleaned"
+            $needsEngine = $false
         }
 
-        Write-Progress -Activity "WinTune" -Status "Applying tweaks..." -PercentComplete 50
-        $engineResult = Invoke-TweaksEngine -ProfileName $Profile `
-            -Snapshot $data.Snapshot `
-            -WhatIf:$WhatIf `
-            -Confirm:$Confirm `
-            -Dangerous:$Dangerous `
-            -StopOnError:$StopOnError `
-            -BackupPathOverride $BackupPath
+        if ($needsEngine) {
+            Write-Progress -Activity "WinTune" -Status "Applying tweaks..." -PercentComplete 50
+            $engineResult = Invoke-TweaksEngine -ProfileName $Profile `
+                -Snapshot $data.Snapshot `
+                -WhatIf:$WhatIf `
+                -Confirm:$Confirm `
+                -Dangerous:$Dangerous `
+                -StopOnError:$StopOnError `
+                -BackupPathOverride $BackupPath
 
-        Write-Progress -Activity "WinTune" -Status "Finalizing..." -PercentComplete 90
-        $finalSnapshot = Invoke-Scanner
-        $finalScore = Get-Score -Snapshot $finalSnapshot -TweakIds $data.Profile.Tweaks -BloatDatabase $data.BloatDb
+            Write-Progress -Activity "WinTune" -Status "Finalizing..." -PercentComplete 90
+            $finalSnapshot = Invoke-Scanner
+            $finalScore = Get-Score -Snapshot $finalSnapshot -TweakIds $data.Profile.Tweaks -BloatDatabase $data.BloatDb
 
-        if ($OutputJson) {
-            $result = [PSCustomObject]@{
-                Action  = 'Apply'
-                Profile = $data.Profile
-                Score   = $finalScore
-                Changes = $engineResult.Changes
-                Backup  = $engineResult.Backup
+            Write-SessionEvent -SessionFile $session.SessionFile -Level Info -Message "Apply completed: score $($finalScore.Score)%, $($engineResult.Changes.Count) changes"
+
+            if ($OutputJson) {
+                $result = [PSCustomObject]@{
+                    Action    = 'Apply'
+                    Profile   = $data.Profile
+                    Score     = $finalScore
+                    Changes   = $engineResult.Changes
+                    Backup    = $engineResult.Backup
+                    SessionId = $session.SessionId
+                }
+                Write-Output ($result | ConvertTo-Json -Depth 10)
+            } else {
+                Out-ConsoleReport -Score $finalScore -Snapshot $finalSnapshot -Profile $data.Profile -Changes $engineResult.Changes
+                if ($engineResult.Backup) {
+                    Write-Host "Backup saved to: $($engineResult.Backup.BackupDir)"
+                }
+                Write-Host "Session log: $($session.SessionDir)"
             }
-            Write-Output ($result | ConvertTo-Json -Depth 10)
-        } else {
-            Out-ConsoleReport -Score $finalScore -Snapshot $finalSnapshot -Profile $data.Profile -Changes $engineResult.Changes
-            if ($engineResult.Backup) {
-                Write-Host "Backup saved to: $($engineResult.Backup.BackupDir)"
+
+            if ($OutputDir) {
+                if (-not (Test-Path $OutputDir)) {
+                    $null = New-Item -Path $OutputDir -ItemType Directory -Force
+                }
+                $htmlPath = Join-Path $OutputDir "apply-$Profile-$(Get-Date -Format 'yyyyMMdd-HHmmss').html"
+                $null = Out-HtmlReport -Score $finalScore -Snapshot $finalSnapshot -Profile $data.Profile -Changes $engineResult.Changes -OutputPath $htmlPath
             }
         }
-
-        if ($OutputDir) {
-            if (-not (Test-Path $OutputDir)) {
-                $null = New-Item -Path $OutputDir -ItemType Directory -Force
-            }
-            $htmlPath = Join-Path $OutputDir "apply-$Profile-$(Get-Date -Format 'yyyyMMdd-HHmmss').html"
-            $null = Out-HtmlReport -Score $finalScore -Snapshot $finalSnapshot -Profile $data.Profile -Changes $engineResult.Changes -OutputPath $htmlPath
-        }
-
-        Write-SessionEvent -SessionFile $script:LogSession.SessionFile -Level "INFO" -Message "Apply action completed."
 
         exit 0
     }
@@ -253,6 +266,9 @@ switch ($Action) {
             exit 1
         }
 
+        $session = Initialize-LogSession -Action $Action
+        Write-SessionEvent -SessionFile $session.SessionFile -Level Info -Message "Revert started for session '$Session'"
+
         if ($OutputJson) {
             $Confirm = $false
         }
@@ -261,34 +277,47 @@ switch ($Action) {
             Write-Host "Revert session '$Session'? This will undo all changes from that session."
             $reply = Read-Host "Type 'yes' to confirm"
             if ($reply -ne 'yes') {
+                Write-SessionEvent -SessionFile $session.SessionFile -Level Warn -Message "Revert canceled by user"
                 Write-Host "Canceled."
                 exit 0
             }
         }
 
+        Write-Progress -Activity "WinTune" -Status "Restoring backup..." -PercentComplete 50
         $results = Restore-Backup -Session $Session -BackupPathOverride $BackupPath
+        Write-Progress -Activity "WinTune" -Status "Done" -PercentComplete 100 -Completed
+
+        $okCount = @($results | Where-Object { $_.Reverted }).Count
+        $failCount = @($results | Where-Object { -not $_.Reverted }).Count
+        Write-SessionEvent -SessionFile $session.SessionFile -Level Info -Message "Revert completed: $okCount succeeded, $failCount failed"
 
         if ($OutputJson) {
-            $payload = @{
-                Action  = 'Revert'
-                Session = $Session
-                Results = $results
+            $payload = [PSCustomObject]@{
+                Action    = 'Revert'
+                Session   = $Session
+                Results   = @($results)
+                SessionId = $session.SessionId
             }
             Write-Output ($payload | ConvertTo-Json -Depth 10)
         } else {
-            $ok = ($results | Where-Object { $_.Reverted }).Count
-            $fail = ($results | Where-Object { -not $_.Reverted }).Count
-            Write-Host "Revert complete: $ok succeeded, $fail failed."
-            foreach ($item in $results) {
+            Write-Host "Revert complete: $okCount succeeded, $failCount failed."
+            foreach ($item in @($results)) {
                 $icon = if ($item.Reverted) { "[OK]" } else { "[X]" }
                 Write-Host "  $icon $($item.Name)"
                 if ($item.Error) {
                     Write-Host "     Error: $($item.Error)"
                 }
             }
+            Write-Host "Session log: $($session.SessionDir)"
         }
 
-        Write-SessionEvent -SessionFile $script:LogSession.SessionFile -Level "INFO" -Message "Revert action completed."
+        if ($OutputDir) {
+            if (-not (Test-Path $OutputDir)) {
+                $null = New-Item -Path $OutputDir -ItemType Directory -Force
+            }
+            $htmlPath = Join-Path $OutputDir "revert-$Session-$(Get-Date -Format 'yyyyMMdd-HHmmss').html"
+            $null = Out-HtmlReport -Score ([PSCustomObject]@{ Total=0; Present=0; Removed=0; Score=100 }) -Snapshot ([PSCustomObject]@{ Packages=@(); Services=@(); Tasks=@(); Registry=@{}; WindowsBuild=[Environment]::OSVersion.Version.Build; Metrics=[PSCustomObject]@{ IdleRamMB=0; ProcessCount=0 } }) -Profile ([PSCustomObject]@{ Name="Revert-$Session" }) -Changes $results -OutputPath $htmlPath
+        }
 
         exit 0
     }

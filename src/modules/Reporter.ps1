@@ -4,6 +4,7 @@ function Get-Score {
         [PSCustomObject]$Snapshot,
 
         [Parameter(Mandatory=$true)]
+        [AllowNull()]
         [AllowEmptyCollection()]
         [array]$TweakIds,
 
@@ -11,38 +12,46 @@ function Get-Score {
         [PSCustomObject]$BloatDatabase
     )
 
-    $total = $TweakIds.Count
-    if ($total -eq 0) {
+    $tweakIds = @($TweakIds)
+    if ($tweakIds.Count -eq 0) {
         return [PSCustomObject]@{ Total = 0; Present = 0; Removed = 0; Score = 100 }
     }
 
+    $total = $tweakIds.Count
     $present = 0
 
     $dbPackages = @{}
-    foreach ($p in $BloatDatabase.packages) { $dbPackages[$p.id] = $p }
+    foreach ($p in @($BloatDatabase.packages)) { if ($p.id) { $dbPackages[$p.id] = $p } }
     $dbServices = @{}
-    foreach ($s in $BloatDatabase.services) { $dbServices[$s.id] = $s }
+    foreach ($s in @($BloatDatabase.services)) { if ($s.id) { $dbServices[$s.id] = $s } }
     $dbTasks = @{}
-    foreach ($t in $BloatDatabase.tasks) { $dbTasks[$t.id] = $t }
+    foreach ($t in @($BloatDatabase.tasks)) { if ($t.id) { $dbTasks[$t.id] = $t } }
     $dbRegistry = @{}
-    foreach ($r in $BloatDatabase.registry) { $dbRegistry[$r.id] = $r }
+    foreach ($r in @($BloatDatabase.registry)) { if ($r.id) { $dbRegistry[$r.id] = $r } }
     $dbCommands = @{}
-    foreach ($c in $BloatDatabase.commands) { $dbCommands[$c.id] = $c }
+    foreach ($c in @($BloatDatabase.commands)) { if ($c.id) { $dbCommands[$c.id] = $c } }
 
-    foreach ($id in $TweakIds) {
+    $snapshotPackages = @($Snapshot.Packages)
+    $snapshotServices = @($Snapshot.Services)
+    $snapshotTasks    = @($Snapshot.Tasks)
+    $snapshotRegistry = $Snapshot.Registry
+    if (-not $snapshotRegistry) { $snapshotRegistry = @{} }
+
+    foreach ($id in $tweakIds) {
+        if (-not $id) { continue }
         $detected = $false
 
         if ($dbPackages.ContainsKey($id)) {
             $entry = $dbPackages[$id]
-            $detected = @($Snapshot.Packages | Where-Object { $_.Name -like $entry.name }).Count -gt 0
+            $detected = @($snapshotPackages | Where-Object { $_.Name -like $entry.name }).Count -gt 0
         } elseif ($dbServices.ContainsKey($id)) {
             $entry = $dbServices[$id]
-            $detected = @($Snapshot.Services | Where-Object { $_.Name -eq $entry.name }).Count -gt 0
+            $detected = @($snapshotServices | Where-Object { $_.Name -eq $entry.name }).Count -gt 0
         } elseif ($dbTasks.ContainsKey($id)) {
             $entry = $dbTasks[$id]
-            $detected = @($Snapshot.Tasks | Where-Object { "$($_.TaskPath)$($_.TaskName)" -like "*$($entry.name)*" }).Count -gt 0
+            $detected = @($snapshotTasks | Where-Object { "$($_.TaskPath)$($_.TaskName)" -like "*$($entry.name)*" }).Count -gt 0
         } elseif ($dbRegistry.ContainsKey($id)) {
-            $detected = $Snapshot.Registry.PSObject.Properties.Name -contains $id -and $null -ne $Snapshot.Registry.$id
+            $detected = $null -ne $snapshotRegistry.$id
         } elseif ($dbCommands.ContainsKey($id)) {
             $detected = Test-CommandDetected -TweakId $id
         }
@@ -51,7 +60,7 @@ function Get-Score {
     }
 
     $removed = $total - $present
-    $score = [math]::Round(($removed / $total) * 100)
+    $score = if ($total -gt 0) { [math]::Round(($removed / $total) * 100) } else { 100 }
 
     return [PSCustomObject]@{
         Total   = $total
@@ -73,36 +82,51 @@ function Out-ConsoleReport {
         [PSCustomObject]$Profile,
 
         [Parameter()]
+        [AllowNull()]
         [array]$Changes
     )
 
+    $profileName   = if ($Profile.Name) { $Profile.Name } else { "Unknown" }
+    $build         = if ($Snapshot.WindowsBuild) { $Snapshot.WindowsBuild } else { "N/A" }
+    $scoreVal      = if ($null -ne $Score.Score) { $Score.Score } else { 0 }
+    $removedVal    = if ($null -ne $Score.Removed) { $Score.Removed } else { 0 }
+    $totalVal      = if ($null -ne $Score.Total) { $Score.Total } else { 0 }
+
+    $snapshotPkgs  = @($Snapshot.Packages)
+    $snapshotSvcs  = @($Snapshot.Services)
+    $snapshotTasks = @($Snapshot.Tasks)
+    $metrics       = $Snapshot.Metrics
+    if (-not $metrics) { $metrics = [PSCustomObject]@{ IdleRamMB = 0; ProcessCount = 0 } }
+
     Write-Host "`n==========================================="
     Write-Host "  WinTune Report"
-    Write-Host "  Profile: $($Profile.Name)"
-    Write-Host "  Build: $($Snapshot.WindowsBuild)"
+    Write-Host "  Profile: $profileName"
+    Write-Host "  Build: $build"
     Write-Host "==========================================="
 
     $barWidth = 30
-    $filled = [math]::Round(($Score.Score / 100) * $barWidth)
+    $filled = [math]::Round(($scoreVal / 100) * $barWidth)
     $empty = $barWidth - $filled
     $bar = "[" + ("#" * $filled) + ("-" * $empty) + "]"
-    Write-Host "`n  Debloat Completion:  $($Score.Score)%  $bar"
-    Write-Host "  $($Score.Removed) of $($Score.Total) items removed"
+    Write-Host "`n  Debloat Completion:  $scoreVal%  $bar"
+    Write-Host "  $removedVal of $totalVal items removed"
 
     Write-Host "`n  Summary:"
-    Write-Host "    Packages installed: $($Snapshot.Packages.Count)"
-    Write-Host "    Services running: $($($Snapshot.Services | Where-Object { $_.Status -eq 'Running' }).Count) / $($Snapshot.Services.Count)"
-    Write-Host "    Tasks found: $($Snapshot.Tasks.Count)"
-    Write-Host "    Idle RAM: $($Snapshot.Metrics.IdleRamMB) MB"
-    Write-Host "    Process count: $($Snapshot.Metrics.ProcessCount)"
+    Write-Host "    Packages installed: $($snapshotPkgs.Count)"
+    $runningCount = @($snapshotSvcs | Where-Object { $_.Status -eq 'Running' }).Count
+    Write-Host "    Services running: $runningCount / $($snapshotSvcs.Count)"
+    Write-Host "    Tasks found: $($snapshotTasks.Count)"
+    Write-Host "    Idle RAM: $($metrics.IdleRamMB) MB"
+    Write-Host "    Process count: $($metrics.ProcessCount)"
 
-    if ($Changes -and $Changes.Count -gt 0) {
+    $changes = @($Changes)
+    if ($changes.Count -gt 0) {
         Write-Host "`n  Changes applied:"
-        $successCount = ($Changes | Where-Object { $_.Success }).Count
-        $failCount = ($Changes | Where-Object { -not $_.Success }).Count
+        $successCount = @($changes | Where-Object { $_.Success }).Count
+        $failCount = @($changes | Where-Object { -not $_.Success }).Count
         Write-Host "    Succeeded: $successCount  Failed: $failCount"
 
-        foreach ($ch in $Changes) {
+        foreach ($ch in $changes) {
             $icon = if ($ch.Success) { "[OK]" } else { "[X]" }
             Write-Host "    $icon $($ch.TweakId) ($($ch.Type))"
             if ($ch.Error) {
@@ -126,19 +150,33 @@ function Out-HtmlReport {
         [PSCustomObject]$Profile,
 
         [Parameter()]
+        [AllowNull()]
         [array]$Changes,
 
         [Parameter()]
         [string]$OutputPath
     )
 
-    $timestamp = (Get-Date).ToString('yyyy-MM-dd HH:mm:ss')
+    $timestamp  = (Get-Date).ToString('yyyy-MM-dd HH:mm:ss')
+    $profileName = if ($Profile.Name) { $Profile.Name } else { "Unknown" }
+    $build       = if ($Snapshot.WindowsBuild) { $Snapshot.WindowsBuild } else { "N/A" }
+    $scoreVal    = if ($null -ne $Score.Score) { $Score.Score } else { 0 }
+    $removedVal  = if ($null -ne $Score.Removed) { $Score.Removed } else { 0 }
+    $totalVal    = if ($null -ne $Score.Total) { $Score.Total } else { 0 }
+
+    $snapshotPkgs  = @($Snapshot.Packages)
+    $snapshotSvcs  = @($Snapshot.Services)
+    $snapshotTasks = @($Snapshot.Tasks)
+    $metrics = $Snapshot.Metrics
+    if (-not $metrics) { $metrics = [PSCustomObject]@{ IdleRamMB = 0; ProcessCount = 0; BootTimeSeconds = $null } }
+
+    $runningCount = @($snapshotSvcs | Where-Object { $_.Status -eq 'Running' }).Count
 
     $changeRows = ""
-    if ($Changes) {
-        foreach ($ch in $Changes) {
-            $status = if ($ch.Success) { "Succeeded" } else { "Failed: $($ch.Error)" }
-            $changeRows += @"
+    $changes = @($Changes)
+    foreach ($ch in $changes) {
+        $status = if ($ch.Success) { "Succeeded" } else { "Failed: $($ch.Error)" }
+        $changeRows += @"
             <tr>
                 <td>$($ch.TweakId)</td>
                 <td>$($ch.Type)</td>
@@ -146,7 +184,6 @@ function Out-HtmlReport {
                 <td>$status</td>
             </tr>
 "@
-        }
     }
 
     $html = @"
@@ -154,7 +191,7 @@ function Out-HtmlReport {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>WinTune Report - $($Profile.Name)</title>
+    <title>WinTune Report - $profileName</title>
     <style>
         body { font-family: -apple-system, Segoe UI, sans-serif; background: #0d1117; color: #c9d1d9; padding: 2em; }
         h1 { color: #00f0ff; }
@@ -166,9 +203,9 @@ function Out-HtmlReport {
 </head>
 <body>
     <h1>WinTune Report</h1>
-    <p>Profile: <strong>$($Profile.Name)</strong> | Build: $($Snapshot.WindowsBuild) | $timestamp</p>
-    <div class="score">$($Score.Score)%</div>
-    <p>Debloat Completion Rate - $($Score.Removed) of $($Score.Total) items removed</p>
+    <p>Profile: <strong>$profileName</strong> | Build: $build | $timestamp</p>
+    <div class="score">$scoreVal%</div>
+    <p>Debloat Completion Rate - $removedVal of $totalVal items removed</p>
 
     <h2>Changes</h2>
     <table>
@@ -178,12 +215,12 @@ function Out-HtmlReport {
 
     <h2>System Info</h2>
     <table>
-        <tr><td>Packages</td><td>$($Snapshot.Packages.Count)</td></tr>
-        <tr><td>Services (total)</td><td>$($Snapshot.Services.Count)</td></tr>
-        <tr><td>Services (running)</td><td>$($($Snapshot.Services | Where-Object { $_.Status -eq 'Running' }).Count)</td></tr>
-        <tr><td>Tasks</td><td>$($Snapshot.Tasks.Count)</td></tr>
-        <tr><td>Idle RAM</td><td>$($Snapshot.Metrics.IdleRamMB) MB</td></tr>
-        <tr><td>Processes</td><td>$($Snapshot.Metrics.ProcessCount)</td></tr>
+        <tr><td>Packages</td><td>$($snapshotPkgs.Count)</td></tr>
+        <tr><td>Services (total)</td><td>$($snapshotSvcs.Count)</td></tr>
+        <tr><td>Services (running)</td><td>$runningCount</td></tr>
+        <tr><td>Tasks</td><td>$($snapshotTasks.Count)</td></tr>
+        <tr><td>Idle RAM</td><td>$($metrics.IdleRamMB) MB</td></tr>
+        <tr><td>Processes</td><td>$($metrics.ProcessCount)</td></tr>
     </table>
 </body>
 </html>
