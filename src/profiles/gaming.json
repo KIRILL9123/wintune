@@ -9,9 +9,7 @@
   ],
   "preserve": [
     "remove-xbox-app",
-    "remove-xbox-gaming-overlay",
-    "keep-xblauthmanager",
-    "keep-xboxgipsvc"
+    "remove-xbox-gaming-overlay"
   ],
   "dangerous": false
 }

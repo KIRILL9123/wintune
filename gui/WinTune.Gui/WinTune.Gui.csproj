@@ -9,6 +9,6 @@
 
   <ItemGroup>
     <PackageReference Include="ModernWpfUI" Version="0.9.6" />
-    <PackageReference Include="Microsoft.PowerShell.SDK" Version="7.4.4" />
+
   </ItemGroup>
 </Project>
