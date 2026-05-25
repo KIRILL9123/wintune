@@ -34,7 +34,7 @@
         "type": "object",
         "properties": {
           "tweakId": { "type": "string" },
-          "type": { "type": "string", "enum": ["package", "service", "task", "registry"] },
+          "type": { "type": "string", "enum": ["package", "service", "task", "registry", "command"] },
           "name": { "type": "string", "description": "Name of the affected item." },
           "originalValue": { "description": "Original value before change (type varies)." },
           "newValue": { "description": "Value after the tweak was applied." },

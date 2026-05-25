@@ -1,7 +1,7 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
-using System.Management.Automation;
 
 namespace WinTune.Gui.Services;
 
@@ -14,46 +14,42 @@ public sealed class PsRunner
         _repoRoot = repoRoot;
     }
 
-    public Task<PsResult> RunAsync(string action, string? profile = null, string? session = null, bool outputJson = true)
+    public async Task<PsResult> RunAsync(string action, string? profile = null, string? session = null, bool outputJson = true)
     {
-        return Task.Run(() =>
+        var scriptPath = Path.Combine(_repoRoot, "src", "wintune.ps1");
+
+        var args = $"-NoProfile -ExecutionPolicy Bypass -File \"{scriptPath}\" -Action {action}";
+
+        if (!string.IsNullOrWhiteSpace(profile))
         {
-            var scriptPath = Path.Combine(_repoRoot, "src", "wintune.ps1");
+            args += $" -Profile {profile}";
+        }
 
-            using var ps = PowerShell.Create();
-            ps.AddCommand("powershell");
-            ps.AddArgument("-NoProfile");
-            ps.AddArgument("-ExecutionPolicy");
-            ps.AddArgument("Bypass");
-            ps.AddArgument("-File");
-            ps.AddArgument(scriptPath);
-            ps.AddArgument("-Action");
-            ps.AddArgument(action);
+        if (!string.IsNullOrWhiteSpace(session))
+        {
+            args += $" -Session {session}";
+        }
 
-            if (!string.IsNullOrWhiteSpace(profile))
-            {
-                ps.AddArgument("-Profile");
-                ps.AddArgument(profile);
-            }
+        if (outputJson)
+        {
+            args += " -OutputJson";
+        }
 
-            if (!string.IsNullOrWhiteSpace(session))
-            {
-                ps.AddArgument("-Session");
-                ps.AddArgument(session);
-            }
+        var psi = new ProcessStartInfo("powershell.exe")
+        {
+            Arguments = args,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
 
-            if (outputJson)
-            {
-                ps.AddArgument("-OutputJson");
-            }
+        using var proc = Process.Start(psi)!;
+        var stdout = await proc.StandardOutput.ReadToEndAsync();
+        var stderr = await proc.StandardError.ReadToEndAsync();
+        await proc.WaitForExitAsync();
 
-            var output = ps.Invoke();
-            var stderr = string.Join(Environment.NewLine, ps.Streams.Error);
-            var stdout = string.Join(Environment.NewLine, output);
-            var exitCode = ps.HadErrors ? 1 : 0;
-
-            return new PsResult(exitCode, stdout, stderr);
-        });
+        return new PsResult(proc.ExitCode, stdout, stderr);
     }
 }
 

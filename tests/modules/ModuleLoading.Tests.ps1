@@ -35,7 +35,9 @@ Describe 'Module loading' {
             'Test-CommandDetected',
             'Get-Score',
             'Out-ConsoleReport',
-            'Out-HtmlReport'
+            'Out-HtmlReport',
+            'Initialize-LogSession',
+            'Write-SessionEvent'
         )
 
         foreach ($func in $expected) {

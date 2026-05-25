@@ -58,4 +58,85 @@ Describe 'Profiles module' {
             $profiles.Count | Should Be 5
         }
     }
+
+    Context 'Test-ProfileSchema' {
+        It 'passes for a valid profile' {
+            $p = [PSCustomObject]@{ name = 'test'; tweaks = @('disable-foo', 'enable-bar') }
+            { Test-ProfileSchema -ProfileObj $p -ProfileName 'test' } | Should Not Throw
+        }
+
+        It 'passes with all optional fields' {
+            $p = [PSCustomObject]@{ name = 'full'; description = 'A full profile'; tweaks = @('disable-foo'); preserve = @('keep-bar'); dangerous = $false; inherits = 'base' }
+            { Test-ProfileSchema -ProfileObj $p } | Should Not Throw
+        }
+
+        It 'passes with inherits array' {
+            $p = [PSCustomObject]@{ name = 'multi'; tweaks = @('disable-foo'); inherits = @('base', 'gaming') }
+            { Test-ProfileSchema -ProfileObj $p } | Should Not Throw
+        }
+
+        It 'passes with null inherits' {
+            $p = [PSCustomObject]@{ name = 'no-parent'; tweaks = @('disable-foo'); inherits = $null }
+            { Test-ProfileSchema -ProfileObj $p } | Should Not Throw
+        }
+
+        It 'throws on null profile' {
+            { Test-ProfileSchema -ProfileObj $null } | Should Throw
+        }
+
+        It 'throws on missing name' {
+            $p = [PSCustomObject]@{ tweaks = @('disable-foo') }
+            { Test-ProfileSchema -ProfileObj $p } | Should Throw
+        }
+
+        It 'throws on empty name' {
+            $p = [PSCustomObject]@{ name = ''; tweaks = @('disable-foo') }
+            { Test-ProfileSchema -ProfileObj $p } | Should Throw
+        }
+
+        It 'throws on missing tweaks' {
+            $p = [PSCustomObject]@{ name = 'test' }
+            { Test-ProfileSchema -ProfileObj $p } | Should Throw
+        }
+
+        It 'throws on non-array tweaks' {
+            $p = [PSCustomObject]@{ name = 'test'; tweaks = 'just-one-string' }
+            { Test-ProfileSchema -ProfileObj $p } | Should Throw
+        }
+
+        It 'throws on empty tweak string' {
+            $p = [PSCustomObject]@{ name = 'test'; tweaks = @('') }
+            { Test-ProfileSchema -ProfileObj $p } | Should Throw
+        }
+
+        It 'throws on invalid tweak ID pattern' {
+            $p = [PSCustomObject]@{ name = 'test'; tweaks = @('UPPERCASE', 'has_underscore', 'has space') }
+            { Test-ProfileSchema -ProfileObj $p } | Should Throw
+        }
+
+        It 'throws on non-boolean dangerous' {
+            $p = [PSCustomObject]@{ name = 'test'; tweaks = @('disable-foo'); dangerous = 'yes' }
+            { Test-ProfileSchema -ProfileObj $p } | Should Throw
+        }
+
+        It 'throws on dangerous=true without description' {
+            $p = [PSCustomObject]@{ name = 'danger'; tweaks = @('disable-foo'); dangerous = $true }
+            { Test-ProfileSchema -ProfileObj $p } | Should Throw
+        }
+
+        It 'passes on dangerous=true with description' {
+            $p = [PSCustomObject]@{ name = 'danger'; description = 'Dangerous tweaks included'; tweaks = @('disable-foo'); dangerous = $true }
+            { Test-ProfileSchema -ProfileObj $p } | Should Not Throw
+        }
+
+        It 'throws on non-array preserve' {
+            $p = [PSCustomObject]@{ name = 'test'; tweaks = @('disable-foo'); preserve = 'not-array' }
+            { Test-ProfileSchema -ProfileObj $p } | Should Throw
+        }
+
+        It 'throws on invalid inherits type' {
+            $p = [PSCustomObject]@{ name = 'test'; tweaks = @('disable-foo'); inherits = 42 }
+            { Test-ProfileSchema -ProfileObj $p } | Should Throw
+        }
+    }
 }

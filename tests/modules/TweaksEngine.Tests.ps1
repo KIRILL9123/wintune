@@ -63,7 +63,7 @@ Describe 'TweaksEngine module' {
             $profile = @{ Name = 'test'; Tweaks = @('test-tweak'); Dangerous = $false }
             $snap = [PSCustomObject]@{ Packages = @(); Services = @(); Tasks = @(); Registry = @{}; Metrics = $null }
             Mock Get-Profile { return $profile }
-            Mock Get-Content { return '{ "packages": [{"id": "test-tweak", "name": "NotInstalledPkg*"}], "services": [], "tasks": [], "registry": [], "commands": [] }' }
+            Mock Get-Content { return '{ "version": 1, "updated": "2026-01-01", "packages": [{"id": "test-tweak", "type": "package", "name": "NotInstalledPkg*", "detect": "mock", "buildMin": 0, "buildMax": 0}], "services": [], "tasks": [], "registry": [], "commands": [] }' }
 
             $result = Invoke-TweaksEngine -ProfileName 'test' -Snapshot $snap -Dangerous
 
@@ -121,7 +121,7 @@ Describe 'TweaksEngine module' {
             $profile = @{ Name = 'test'; Tweaks = @('test-tweak'); Dangerous = $false }
             $snap = [PSCustomObject]@{ Packages = @([PSCustomObject]@{ Name = 'BloatPkg_1.0' }); Services = @(); Tasks = @(); Registry = @{}; Metrics = $null }
             Mock Get-Profile { return $profile }
-            Mock Get-Content { return '{ "packages": [{"id": "test-tweak", "name": "BloatPkg*"}], "services": [], "tasks": [], "registry": [], "commands": [] }' }
+            Mock Get-Content { return '{ "version": 1, "updated": "2026-01-01", "packages": [{"id": "test-tweak", "type": "package", "name": "BloatPkg*", "detect": "mock", "buildMin": 0, "buildMax": 0}], "services": [], "tasks": [], "registry": [], "commands": [] }' }
             Mock Read-OriginalValue { return 'test-pkg' }
             Mock New-Backup { return [PSCustomObject]@{ Session = 'test'; BackupDir = 'C:\tmp'; ManifestPath = 'C:\tmp\manifest.json' } }
             Mock Invoke-TweakGeneric { }
@@ -138,7 +138,7 @@ Describe 'TweaksEngine module' {
             $profile = @{ Name = 'test'; Tweaks = @('test-tweak'); Dangerous = $false }
             $snap = [PSCustomObject]@{ Packages = @([PSCustomObject]@{ Name = 'BloatPkg_1.0' }); Services = @(); Tasks = @(); Registry = @{}; Metrics = $null }
             Mock Get-Profile { return $profile }
-            Mock Get-Content { return '{ "packages": [{"id": "test-tweak", "name": "BloatPkg*"}], "services": [], "tasks": [], "registry": [], "commands": [] }' }
+            Mock Get-Content { return '{ "version": 1, "updated": "2026-01-01", "packages": [{"id": "test-tweak", "type": "package", "name": "BloatPkg*", "detect": "mock", "buildMin": 0, "buildMax": 0}], "services": [], "tasks": [], "registry": [], "commands": [] }' }
             Mock Write-Host { }
 
             $result = Invoke-TweaksEngine -ProfileName 'test' -Snapshot $snap -WhatIf -Dangerous
@@ -151,7 +151,7 @@ Describe 'TweaksEngine module' {
             $profile = @{ Name = 'test'; Tweaks = @('test-tweak'); Dangerous = $false }
             $snap = [PSCustomObject]@{ Packages = @([PSCustomObject]@{ Name = 'BloatPkg_1.0' }); Services = @(); Tasks = @(); Registry = @{}; Metrics = $null }
             Mock Get-Profile { return $profile }
-            Mock Get-Content { return '{ "packages": [{"id": "test-tweak", "name": "BloatPkg*"}], "services": [], "tasks": [], "registry": [], "commands": [] }' }
+            Mock Get-Content { return '{ "version": 1, "updated": "2026-01-01", "packages": [{"id": "test-tweak", "type": "package", "name": "BloatPkg*", "detect": "mock", "buildMin": 0, "buildMax": 0}], "services": [], "tasks": [], "registry": [], "commands": [] }' }
             Mock Read-OriginalValue { return 'test-pkg' }
             Mock New-Backup { return [PSCustomObject]@{ Session = 'test'; BackupDir = 'C:\tmp'; ManifestPath = 'C:\tmp\manifest.json' } }
             Mock Invoke-TweakGeneric { throw "Simulated failure" }
@@ -164,7 +164,7 @@ Describe 'TweaksEngine module' {
             $profile = @{ Name = 'test'; Tweaks = @('test-tweak', 'test-tweak-2'); Dangerous = $false }
             $snap = [PSCustomObject]@{ Packages = @([PSCustomObject]@{ Name = 'BloatPkg_1.0' }, [PSCustomObject]@{ Name = 'OtherPkg' }); Services = @(); Tasks = @(); Registry = @{}; Metrics = $null }
             Mock Get-Profile { return $profile }
-            Mock Get-Content { return '{ "packages": [{"id": "test-tweak", "name": "BloatPkg*"}, {"id": "test-tweak-2", "name": "OtherPkg*"}], "services": [], "tasks": [], "registry": [], "commands": [], "Changes": [] }' }
+            Mock Get-Content { return '{ "version": 1, "updated": "2026-01-01", "packages": [{"id": "test-tweak", "type": "package", "name": "BloatPkg*", "detect": "mock", "buildMin": 0, "buildMax": 0}, {"id": "test-tweak-2", "type": "package", "name": "OtherPkg*", "detect": "mock", "buildMin": 0, "buildMax": 0}], "services": [], "tasks": [], "registry": [], "commands": [], "Changes": [] }' }
             Mock Read-OriginalValue { return 'test-pkg' }
             Mock New-Backup { return [PSCustomObject]@{ Session = 'test'; BackupDir = 'C:\tmp'; ManifestPath = 'C:\tmp\manifest.json' } }
             Mock Set-Content { }
@@ -188,7 +188,7 @@ Describe 'TweaksEngine module' {
             $profile = @{ Name = 'test'; Tweaks = @('test-a', 'test-b'); Dangerous = $false }
             $snap = [PSCustomObject]@{ Packages = @([PSCustomObject]@{ Name = 'PkgA' }, [PSCustomObject]@{ Name = 'PkgB' }); Services = @(); Tasks = @(); Registry = @{}; Metrics = $null }
             Mock Get-Profile { return $profile }
-            Mock Get-Content { return '{ "packages": [{"id": "test-a", "name": "PkgA*"}, {"id": "test-b", "name": "PkgB*"}], "services": [], "tasks": [], "registry": [], "commands": [], "Changes": [] }' }
+            Mock Get-Content { return '{ "version": 1, "updated": "2026-01-01", "packages": [{"id": "test-a", "type": "package", "name": "PkgA*", "detect": "mock", "buildMin": 0, "buildMax": 0}, {"id": "test-b", "type": "package", "name": "PkgB*", "detect": "mock", "buildMin": 0, "buildMax": 0}], "services": [], "tasks": [], "registry": [], "commands": [], "Changes": [] }' }
             Mock Read-OriginalValue { return 'pkg' }
             Mock New-Backup { return [PSCustomObject]@{ Session = 'test'; BackupDir = 'C:\tmp'; ManifestPath = 'C:\tmp\manifest.json' } }
             Mock Invoke-TweakGeneric { throw "Fail $_" }
@@ -206,7 +206,7 @@ Describe 'TweaksEngine module' {
             $profile = @{ Name = 'test'; Tweaks = @('test-tweak'); Dangerous = $false }
             $snap = [PSCustomObject]@{ Packages = @([PSCustomObject]@{ Name = 'BloatPkg_1.0' }); Services = @(); Tasks = @(); Registry = @{}; Metrics = $null }
             Mock Get-Profile { return $profile }
-            Mock Get-Content { return '{ "packages": [{"id": "test-tweak", "name": "BloatPkg*"}], "services": [], "tasks": [], "registry": [], "commands": [] }' }
+            Mock Get-Content { return '{ "version": 1, "updated": "2026-01-01", "packages": [{"id": "test-tweak", "type": "package", "name": "BloatPkg*", "detect": "mock", "buildMin": 0, "buildMax": 0}], "services": [], "tasks": [], "registry": [], "commands": [] }' }
             Mock Read-OriginalValue { return 'test-pkg' }
             Mock New-Backup { return [PSCustomObject]@{ Session = 'test'; BackupDir = 'C:\tmp'; ManifestPath = 'C:\tmp\manifest.json' } }
 
@@ -223,7 +223,7 @@ Describe 'TweaksEngine module' {
             $profile = @{ Name = 'test'; Tweaks = @('test-tweak'); Dangerous = $false }
             $snap = [PSCustomObject]@{ Packages = @(); Services = @(); Tasks = @(); Registry = @{}; Metrics = $null }
             Mock Get-Profile { return $profile }
-            Mock Get-Content { return '{ "packages": [{"id": "test-tweak", "name": "NotInstalled*"}], "services": [], "tasks": [], "registry": [], "commands": [] }' }
+            Mock Get-Content { return '{ "version": 1, "updated": "2026-01-01", "packages": [{"id": "test-tweak", "type": "package", "name": "NotInstalled*", "detect": "mock", "buildMin": 0, "buildMax": 0}], "services": [], "tasks": [], "registry": [], "commands": [] }' }
 
             $result = Invoke-TweaksEngine -ProfileName 'test' -Snapshot $snap -StopOnError -Dangerous
 
@@ -235,7 +235,7 @@ Describe 'TweaksEngine module' {
         It 'returns 0 changes when snapshot has no pending items' {
             $profile = @{ Name = 'test'; Tweaks = @('test-tweak'); Dangerous = $false }
             Mock Get-Profile { return $profile }
-            Mock Get-Content { return '{ "packages": [{"id": "test-tweak", "name": "BloatPkg*"}], "services": [], "tasks": [], "registry": [], "commands": [] }' }
+            Mock Get-Content { return '{ "version": 1, "updated": "2026-01-01", "packages": [{"id": "test-tweak", "type": "package", "name": "BloatPkg*", "detect": "mock", "buildMin": 0, "buildMax": 0}], "services": [], "tasks": [], "registry": [], "commands": [] }' }
 
             $cleanSnap = [PSCustomObject]@{ Packages = @(); Services = @(); Tasks = @(); Registry = @{}; Metrics = $null }
             $result = Invoke-TweaksEngine -ProfileName 'test' -Snapshot $cleanSnap -Dangerous

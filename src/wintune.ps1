@@ -231,7 +231,8 @@ switch ($Action) {
                 -Confirm:$Confirm `
                 -Dangerous:$Dangerous `
                 -StopOnError:$StopOnError `
-                -BackupPathOverride $BackupPath
+                -BackupPathOverride $BackupPath `
+                -SessionFile $session.SessionFile
         } catch {
             Write-SessionEvent -SessionFile $session.SessionFile -Level Error -Message "Apply failed: $_"
             if ($OutputJson) {

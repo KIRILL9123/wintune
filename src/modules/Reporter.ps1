@@ -1,3 +1,4 @@
+# Requires: TweaksEngine.ps1 (Test-CommandDetected is defined there, used by Get-Score for 'command' type tweaks)
 function Get-Score {
     param(
         [Parameter(Mandatory=$true)]

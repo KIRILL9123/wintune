@@ -40,5 +40,5 @@
       "type": "string"
     }
   },
-  "required": ["id", "type", "name", "detect"]
+  "required": ["id", "type", "name", "detect", "buildMin", "buildMax"]
 }

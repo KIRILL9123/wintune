@@ -4,11 +4,13 @@ function Invoke-Scanner {
     $timestamp = (Get-Date).ToString('o')
 
     # Service start modes (can fail without admin)
+    $wmiToServiceMap = @{ 'Auto' = 'Automatic'; 'Manual' = 'Manual'; 'Disabled' = 'Disabled' }
     $serviceStartModes = @{}
     $serviceConfig = Get-CimInstance -ClassName Win32_Service -ErrorAction SilentlyContinue
     if ($serviceConfig) {
         foreach ($svcConfig in $serviceConfig) {
-            $serviceStartModes[$svcConfig.Name] = $svcConfig.StartMode
+            $rawMode = $svcConfig.StartMode
+            $serviceStartModes[$svcConfig.Name] = if ($wmiToServiceMap.ContainsKey($rawMode)) { $wmiToServiceMap[$rawMode] } else { $rawMode }
         }
     }
 

@@ -249,7 +249,9 @@ function Restore-Backup {
                         $svcStatus = $null
                     }
                     if ($svcStartType) {
-                        Set-Service -Name $change.Name -StartupType $svcStartType -ErrorAction Stop
+                        $wmiToServiceMap = @{ 'Auto' = 'Automatic'; 'Manual' = 'Manual'; 'Disabled' = 'Disabled' }
+                        $mappedStartType = if ($wmiToServiceMap.ContainsKey($svcStartType)) { $wmiToServiceMap[$svcStartType] } else { $svcStartType }
+                        Set-Service -Name $change.Name -StartupType $mappedStartType -ErrorAction Stop
                     }
                     if ($svcStatus -eq 'Running') {
                         Start-Service -Name $change.Name -ErrorAction SilentlyContinue

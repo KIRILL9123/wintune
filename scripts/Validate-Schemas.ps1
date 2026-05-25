@@ -127,6 +127,13 @@ if ($IncludeProfiles) {
                 throw "Profile '$($profile.name)' references unknown tweak id '$id'."
             }
         }
+
+        $preserve = if ($profile.preserve) { @($profile.preserve) } else { @() }
+        foreach ($id in $preserve) {
+            if (-not $allIds.ContainsKey($id)) {
+                throw "Profile '$($profile.name)' preserve list references unknown id '$id'."
+            }
+        }
     }
 }
 

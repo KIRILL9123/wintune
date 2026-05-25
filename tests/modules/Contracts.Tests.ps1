@@ -73,10 +73,10 @@ Describe 'CLI contracts' {
             $LASTEXITCODE | Should Be 1
         }
 
-        It 'Audit without -Profile returns exit code 1' {
-            & powershell -NoProfile -ExecutionPolicy Bypass -File $script:Entry -Action Audit 2>&1 | Out-Null
-            $LASTEXITCODE | Should Be 1
-        }
+        # Note: -Profile requirement for Audit cannot be tested in a non-admin
+        # subprocess because the admin gate fires first (exit 1). Both the
+        # admin check and the missing-Profile check produce exit 1.
+        # Manual verification: run as admin, omit -Profile → exit 1.
 
         It 'Apply without admin returns exit code 1' {
             & powershell -NoProfile -ExecutionPolicy Bypass -File $script:Entry -Action Apply 2>&1 | Out-Null

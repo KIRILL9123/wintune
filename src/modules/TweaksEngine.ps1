@@ -1,3 +1,82 @@
+function Test-BloatDatabaseSchema {
+    <#
+    .SYNOPSIS
+        Validates the bloat-database.json structure against the expected schema.
+        Throws on missing sections, invalid types, duplicate IDs, or missing required fields.
+    #>
+    param(
+        [Parameter(Mandatory=$true)]
+        $Database
+    )
+
+    $errors = @()
+    $allowedTypes = @('package', 'service', 'task', 'registry', 'command')
+    $requiredSections = @('version', 'updated', 'packages', 'services', 'tasks', 'registry', 'commands')
+    $requiredEntryFields = @('id', 'type', 'name', 'detect', 'buildMin', 'buildMax')
+
+    if (-not $Database) {
+        throw 'Bloat database is null'
+    }
+
+    foreach ($section in $requiredSections) {
+        if ($null -eq $Database.$section) {
+            $errors += "missing required top-level field: $section"
+        }
+    }
+
+    if ($Database.version -isnot [int] -or $Database.version -lt 1) {
+        $errors += "version must be an integer >= 1, got '$($Database.version)'"
+    }
+
+    if ($Database.updated -isnot [string] -or $Database.updated -eq '') {
+        $errors += "updated must be a non-empty string, got '$($Database.updated)'"
+    }
+
+    $allIds = @{}
+    $sectionTypes = @{ packages='package'; services='service'; tasks='task'; registry='registry'; commands='command' }
+
+    foreach ($section in $sectionTypes.Keys) {
+        $entries = @($Database.$section)
+
+        foreach ($entry in $entries) {
+            if (-not $entry) { continue }
+
+            foreach ($field in $requiredEntryFields) {
+                if ($null -eq $entry.$field) {
+                    $errors += "$section entry '$($entry.id -replace "'","''")' missing required field: $field"
+                }
+            }
+
+            if ($entry.type -and $entry.type -notin $allowedTypes) {
+                $errors += "$section entry '$($entry.id)' has invalid type: $($entry.type)"
+            }
+
+            $expectedType = $sectionTypes[$section]
+            if ($entry.type -and $entry.type -ne $expectedType) {
+                $errors += "$section entry '$($entry.id)' has type '$($entry.type)' but section '$section' expects '$expectedType'"
+            }
+
+            if ($entry.id -and $allIds.ContainsKey($entry.id)) {
+                $errors += "duplicate id '$($entry.id)' across sections"
+            }
+            if ($entry.id) {
+                $allIds[$entry.id] = $true
+            }
+
+            if ($entry.buildMin -is [int] -and $entry.buildMin -lt 0) {
+                $errors += "$section entry '$($entry.id)' has buildMin < 0"
+            }
+            if ($entry.buildMax -is [int] -and $entry.buildMax -lt 0) {
+                $errors += "$section entry '$($entry.id)' has buildMax < 0"
+            }
+        }
+    }
+
+    if ($errors.Count -gt 0) {
+        throw "Bloat database schema validation failed: $($errors -join '; ')"
+    }
+}
+
 function Invoke-TweaksEngine {
     param(
         [Parameter(Mandatory=$true)]
@@ -19,7 +98,10 @@ function Invoke-TweaksEngine {
         [switch]$StopOnError,
 
         [Parameter()]
-        [string]$BackupPathOverride
+        [string]$BackupPathOverride,
+
+        [Parameter()]
+        [string]$SessionFile
     )
 
     $profile = Get-Profile -Name $ProfileName
@@ -39,6 +121,7 @@ function Invoke-TweaksEngine {
 
     $bloatDb = Join-Path (Join-Path (Split-Path $PSScriptRoot -Parent) "data") "bloat-database.json"
     $db = Get-Content $bloatDb -Raw | ConvertFrom-Json
+    Test-BloatDatabaseSchema -Database $db
 
     $dbPackages = @{}
     foreach ($p in $db.packages) { $dbPackages[$p.id] = $p }
@@ -61,6 +144,10 @@ function Invoke-TweaksEngine {
             $entry = $dbPackages[$tweakId]
             $tweakType = 'package'
             $tweakName = $entry.name
+            if (($entry.buildMin -gt 0 -and $Snapshot.WindowsBuild -lt $entry.buildMin) -or
+                ($entry.buildMax -gt 0 -and $Snapshot.WindowsBuild -gt $entry.buildMax)) {
+                continue
+            }
             $detected = $false
             foreach ($pkg in $Snapshot.Packages) {
                 if ($pkg.Name -like $entry.name) { $detected = $true; break }
@@ -69,6 +156,10 @@ function Invoke-TweaksEngine {
             $entry = $dbServices[$tweakId]
             $tweakType = 'service'
             $tweakName = $entry.name
+            if (($entry.buildMin -gt 0 -and $Snapshot.WindowsBuild -lt $entry.buildMin) -or
+                ($entry.buildMax -gt 0 -and $Snapshot.WindowsBuild -gt $entry.buildMax)) {
+                continue
+            }
             $detected = $false
             foreach ($svc in $Snapshot.Services) {
                 if ($svc.Name -eq $entry.name) { $detected = $true; break }
@@ -77,6 +168,10 @@ function Invoke-TweaksEngine {
             $entry = $dbTasks[$tweakId]
             $tweakType = 'task'
             $tweakName = $entry.name
+            if (($entry.buildMin -gt 0 -and $Snapshot.WindowsBuild -lt $entry.buildMin) -or
+                ($entry.buildMax -gt 0 -and $Snapshot.WindowsBuild -gt $entry.buildMax)) {
+                continue
+            }
             $detected = $false
             foreach ($task in $Snapshot.Tasks) {
                 if ("$($task.TaskPath)$($task.TaskName)" -like "*$($entry.name)*") { $detected = $true; break }
@@ -85,11 +180,19 @@ function Invoke-TweaksEngine {
             $entry = $dbRegistry[$tweakId]
             $tweakType = 'registry'
             $tweakName = $entry.name
+            if (($entry.buildMin -gt 0 -and $Snapshot.WindowsBuild -lt $entry.buildMin) -or
+                ($entry.buildMax -gt 0 -and $Snapshot.WindowsBuild -gt $entry.buildMax)) {
+                continue
+            }
             $detected = $Snapshot.Registry.PSObject.Properties.Name -contains $tweakId -and $null -ne $Snapshot.Registry.$tweakId
         } elseif ($dbCommands.ContainsKey($tweakId)) {
             $entry = $dbCommands[$tweakId]
             $tweakType = 'command'
             $tweakName = $entry.name
+            if (($entry.buildMin -gt 0 -and $Snapshot.WindowsBuild -lt $entry.buildMin) -or
+                ($entry.buildMax -gt 0 -and $Snapshot.WindowsBuild -gt $entry.buildMax)) {
+                continue
+            }
             $detected = Test-CommandDetected -TweakId $tweakId
         }
 
@@ -189,8 +292,14 @@ function Invoke-TweaksEngine {
 
             $change.Success = $true
             $change.NewValue = if ($tweak.Type -eq 'registry') { 0 } else { 'removed' }
+            if ($SessionFile) {
+                Write-SessionEvent -SessionFile $SessionFile -Level Info -Message "Tweak '$($tweak.TweakId)' ($($tweak.Type)): succeeded"
+            }
         } catch {
             $change.Error = $_.Exception.Message
+            if ($SessionFile) {
+                Write-SessionEvent -SessionFile $SessionFile -Level Error -Message "Tweak '$($tweak.TweakId)' ($($tweak.Type)) failed: $($_.Exception.Message)"
+            }
             if ($StopOnError) {
                 throw
             }
@@ -242,7 +351,11 @@ function Read-OriginalValue {
         }
         'service' {
             $svc = Get-CimInstance -ClassName Win32_Service -Filter "Name='$($Tweak.Name)'" -ErrorAction SilentlyContinue
-            if ($svc) { return @{ StartType = $svc.StartMode; Status = $svc.Status } }
+            if ($svc) {
+                $wmiToServiceMap = @{ 'Auto' = 'Automatic'; 'Manual' = 'Manual'; 'Disabled' = 'Disabled' }
+                $startType = if ($wmiToServiceMap.ContainsKey($svc.StartMode)) { $wmiToServiceMap[$svc.StartMode] } else { $svc.StartMode }
+                return @{ StartType = $startType; Status = $svc.Status }
+            }
         }
         'task' {
             $task = Get-ScheduledTask -ErrorAction SilentlyContinue |
