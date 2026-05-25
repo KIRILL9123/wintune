@@ -24,7 +24,7 @@ Build an open-source, deterministic Windows 11 tuning utility that is safe, audi
 
 ## Tech stack
 - **Runtime**: PowerShell 5.1+ (ships with Windows 11; no user dependencies).
-- **Optional GUI layer (gui/)**: Python 3 + PySide6 (Qt) for a native Windows GUI application in `gui/` folder. Planned for post-v0.1 — core engine powershell must be stable first. The `gui/` layer communicates with the core via `-OutputJson` flag (machine-readable stdout JSON) — no tight coupling. Core must never depend on Python.
+- **Optional GUI layer (gui/)**: WPF C# (.NET) using ModernWpf for Windows 11 Fluent styling. Planned for post-v0.1 — core engine PowerShell must be stable first. The `gui/` layer communicates with the core via `-OutputJson` (machine-readable stdout JSON) — no tight coupling. Core must never depend on the GUI.
 - **Data format**: JSON for profile manifests and bloatware database. PowerShell script files (`.ps1`) for individual tweak implementations.
 - **Tests**: Pester (PowerShell test framework).
 
@@ -52,7 +52,7 @@ wintune/
 │   │   └── minimal.json
 │   └── data/
 │       └── bloat-database.json  # Shared dictionary: App IDs, service names, task paths, registry keys
-├── gui/                         # Planned PySide6 GUI (post-v0.1, separate entry point)
+├── gui/                         # Planned WPF GUI (post-v0.1, separate entry point)
 ├── tests/
 │   ├── modules/
 │   ├── tweaks/
@@ -224,32 +224,28 @@ When `-OutputJson` is used (for GUI consumption), all output is written as JSON 
 
 ## GUI architecture (planned, post-v0.1)
 
-The GUI is a **PySide6 (Qt)** desktop application in `gui/`. It communicates with the PowerShell engine exclusively via `-OutputJson`:
-- Engine never imports Python modules or calls Python code.
-- GUI never calls PowerShell cmdlets directly.
-- Contract: JSON on stdin/stdout only.
+The GUI is a **WPF C# (.NET)** desktop application in `gui/WinTune.Gui`. It communicates with the PowerShell engine exclusively via `-OutputJson`:
+- Engine never imports GUI assemblies or calls GUI code.
+- GUI never imports PowerShell modules or executes cmdlets directly.
+- Contract: JSON on stdin/stdout only, no interactive prompts in GUI mode.
 
 ### Planned screens
-1. **Dashboard** — profile selector + action buttons
-2. **Audit Report** — Debloat Completion Rate + per-category breakdown + per-tweak checkboxes
-3. **Apply Progress** — live progress bar with per-tweak status
-4. **Revert** — session history browser + revert confirmation
-5. **Settings** — backup path, output path, dangerous mode toggle
-6. **Report Viewer** — inline HTML report or browser launch
+1. **Dashboard** — debloat score + action buttons (Audit / Apply / Revert)
+2. **Profile Selector** — profile cards with description and selection
+3. **Audit Results** — per-tweak table with include/exclude checkboxes
+4. **Apply Progress** — per-tweak progress list + overall progress
+5. **Revert** — session history browser with revert confirmation
 
-### Why PySide6
+### Why WPF + ModernWpf
 | Approach | Verdict |
 |---|---|
-| `textual` (terminal TUI) | Rejected — we want a real desktop app with native Windows controls |
-| **PySide6 (Qt)** | Chosen — native look, dark theme, Python, stable |
-| Electron | Rejected — 200MB overhead for a tuning utility is absurd |
-| C# WinUI 3 | Rejected — locks us into Windows-only and a different language |
-| tkinter | Rejected — impossible to make modern-looking UI |
+| **WPF + ModernWpf** | Chosen — native Windows UI, Fluent styling, stable ecosystem |
+| WinUI 3 | Rejected — heavier packaging and tighter Windows-only dependency |
 
 ### GUI development order
 1. Phase 0-4: PowerShell engine only. No GUI code.
-2. Phase 5: PySide6 GUI app. PowerShell engine must be stable and feature-complete.
-3. The `gui/` folder contains its own `README.md`, `requirements.txt`, and a separate entry point.
+2. Phase 5: WPF GUI app. PowerShell engine must be stable and feature-complete.
+3. The `gui/` folder contains its own `README.md` and a separate entry point.
 
 ## File naming conventions
 - PowerShell modules: PascalCase (`Scanner.ps1`, `BackupManager.ps1`).

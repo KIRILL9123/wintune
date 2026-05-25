@@ -1,0 +1,38 @@
+<UserControl x:Class="WinTune.Gui.Views.ApplyProgressView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:WinTune.Gui.ViewModels">
+  <UserControl.DataContext>
+    <vm:ApplyProgressViewModel />
+  </UserControl.DataContext>
+
+  <Grid Margin="24">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="Auto" />
+      <RowDefinition Height="*" />
+    </Grid.RowDefinitions>
+
+    <TextBlock Text="Apply Progress" FontSize="28" FontWeight="SemiBold" />
+
+    <ProgressBar Grid.Row="1" Height="16" Margin="0,16,0,0" Value="{Binding OverallPercent}" />
+
+    <ListView Grid.Row="2" ItemsSource="{Binding Rows}" Margin="0,16,0,0">
+      <ListView.View>
+        <GridView>
+          <GridViewColumn Header="Tweak" DisplayMemberBinding="{Binding TweakId}" Width="280" />
+          <GridViewColumn Header="Status" Width="140">
+            <GridViewColumn.CellTemplate>
+              <DataTemplate>
+                <StackPanel Orientation="Horizontal">
+                  <TextBlock FontFamily="Segoe MDL2 Assets" Text="{Binding StatusGlyph}" Margin="0,0,8,0" />
+                  <TextBlock Text="{Binding Status}" />
+                </StackPanel>
+              </DataTemplate>
+            </GridViewColumn.CellTemplate>
+          </GridViewColumn>
+        </GridView>
+      </ListView.View>
+    </ListView>
+  </Grid>
+</UserControl>

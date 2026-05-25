@@ -8,11 +8,10 @@ logs/*
 # Backups (stored in $env:LOCALAPPDATA\WinTune\backups\ by default)
 backups/
 
-# Python GUI layer
-gui/__pycache__/
-gui/venv/
-gui/*.pyc
-gui/.python-version
+# GUI build outputs
+gui/**/bin/
+gui/**/obj/
+gui/.vs/
 
 # OS
 .DS_Store

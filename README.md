@@ -88,7 +88,7 @@ wintune/
 │   │   └── minimal.json
 │   └── data/
 │       └── bloat-database.json  # Shared dictionary of App IDs, service names, task paths
-├── gui/                         # Optional Python TUI (separate entry point)
+├── gui/                         # Optional WPF GUI (separate entry point)
 ├── tests/
 │   ├── modules/
 │   ├── tweaks/
@@ -104,7 +104,7 @@ wintune/
 
 - **Tweaks**: add a `.ps1` file under `src/tweaks/<category>/` with a single exported function that accepts `-WhatIf` and `-Confirm`. Reference entries from `data/bloat-database.json`. Write a matching Pester test.
 - **Profiles**: add or edit JSON under `src/profiles/`. Use `"inherits": "base"` to avoid duplicating common debloat. Child profile tweaks always override parent.
-- **GUI**: Python work goes in `gui/`. The PowerShell core must never depend on it.
+- **GUI**: WPF work goes in `gui/`. The PowerShell core must never depend on it.
 - Open a PR — all contributions must pass Pester tests.
 
 ## License

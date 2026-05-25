@@ -56,7 +56,20 @@
 - Contract and profile changes fail fast without explicit updates and tests.
 - CI prevents silent shape/compatibility regressions.
 
-## Phase 5: Release Readiness (v0.1)
+## Phase 5: WPF GUI (Post-v0.1)
+- [ ] Scaffold WPF GUI project (`gui/WinTune.Gui`) on `net8.0-windows`.
+- [ ] Implement dashboard, profile selector, audit results, apply progress, revert views.
+- [ ] Wire GUI to PowerShell via `-OutputJson` (no direct module imports).
+- [ ] Add ModernWpf styling and default dark theme.
+- [ ] Define GUI-level smoke tests (launch + List + OutputJson parsing).
+
+**DoD**
+- GUI builds via `dotnet build` and runs via `dotnet run --project gui/WinTune.Gui`.
+- All views render without exceptions.
+- GUI only uses CLI JSON contracts (no direct PowerShell module calls).
+- Default dark theme is applied.
+
+## Phase 6: Release Readiness (v0.1)
 - [ ] CI on `windows-latest`: Pester + schema checks + CLI smoke checks.
 - [ ] Publish operator runbook: guarantees, limitations, dangerous-policy.
 - [ ] Final review checklist for release confidence.
@@ -66,8 +79,3 @@
 - Full CI is green.
 - Runbook is complete and aligned with actual behavior.
 - Release tag `v0.1.0` is created from validated state.
-
-## Phase 6: GUI and Community Expansion (Post-v0.1)
-- [ ] PySide6 GUI implementation in `gui/` using `-OutputJson` contract.
-- [ ] Plugin/community extensions for bloat database and custom profiles.
-- [ ] Localization (`ru`, `de`, `en`).
