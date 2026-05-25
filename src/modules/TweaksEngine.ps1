@@ -101,7 +101,10 @@ function Invoke-TweaksEngine {
         [string]$BackupPathOverride,
 
         [Parameter()]
-        [string]$SessionFile
+        [string]$SessionFile,
+
+        [Parameter()]
+        [string]$ProgressFile
     )
 
     $profile = Get-Profile -Name $ProfileName
@@ -277,6 +280,11 @@ function Invoke-TweaksEngine {
             SequenceNumber  = $seq
         }
 
+        if ($ProgressFile) {
+            $progressLine = [PSCustomObject]@{ seq = "$seq/$($pendingItems.Count)"; id = $tweak.TweakId; status = 'running' }
+            Add-Content -Path $ProgressFile -Value ($progressLine | ConvertTo-Json -Compress) -Encoding UTF8
+        }
+
         try {
             if ($tweakScript) {
                 . $tweakScript
@@ -295,10 +303,18 @@ function Invoke-TweaksEngine {
             if ($SessionFile) {
                 Write-SessionEvent -SessionFile $SessionFile -Level Info -Message "Tweak '$($tweak.TweakId)' ($($tweak.Type)): succeeded"
             }
+            if ($ProgressFile) {
+                $progressLine = [PSCustomObject]@{ seq = "$seq/$($pendingItems.Count)"; id = $tweak.TweakId; status = 'done' }
+                Add-Content -Path $ProgressFile -Value ($progressLine | ConvertTo-Json -Compress) -Encoding UTF8
+            }
         } catch {
             $change.Error = $_.Exception.Message
             if ($SessionFile) {
                 Write-SessionEvent -SessionFile $SessionFile -Level Error -Message "Tweak '$($tweak.TweakId)' ($($tweak.Type)) failed: $($_.Exception.Message)"
+            }
+            if ($ProgressFile) {
+                $progressLine = [PSCustomObject]@{ seq = "$seq/$($pendingItems.Count)"; id = $tweak.TweakId; status = 'failed' }
+                Add-Content -Path $ProgressFile -Value ($progressLine | ConvertTo-Json -Compress) -Encoding UTF8
             }
             if ($StopOnError) {
                 throw

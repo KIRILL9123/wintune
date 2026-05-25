@@ -11,6 +11,8 @@ public sealed class RevertViewModel : ViewModelBase
 {
     public ObservableCollection<RevertSession> Sessions { get; } = new();
 
+    public bool IsEmpty => !IsLoading && Sessions.Count == 0 && string.IsNullOrEmpty(Error);
+
     public async Task LoadAsync()
     {
         IsLoading = true;
@@ -24,6 +26,7 @@ public sealed class RevertViewModel : ViewModelBase
 
             if (!Directory.Exists(backupDir))
             {
+                RaisePropertyChanged(nameof(IsEmpty));
                 return;
             }
 
@@ -79,6 +82,7 @@ public sealed class RevertViewModel : ViewModelBase
         finally
         {
             IsLoading = false;
+            RaisePropertyChanged(nameof(IsEmpty));
         }
     }
 }

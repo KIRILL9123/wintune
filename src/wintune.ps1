@@ -218,15 +218,11 @@ switch ($Action) {
                 Write-Host "[WhatIf] Score would improve from $($data.Score.Score)% to 100%."
                 Write-Host "Session log: $($session.SessionDir)"
             }
-
             Write-SessionEvent -SessionFile $session.SessionFile -Level Info -Message "WhatIf: $($data.Score.Present) items would be cleaned"
-        $failedCount = @($engineResult.Changes | Where-Object { -not $_.Success }).Count
-        if ($failedCount -gt 0 -and -not $StopOnError) {
-            exit 2
+            exit 0
         }
 
-        exit 0
-    }
+        $progressFile = Join-Path $env:TEMP "wintune-apply-$($session.SessionId).jsonl"
 
         Write-Progress -Activity "WinTune" -Status "Applying tweaks..." -PercentComplete 50
         try {
@@ -237,7 +233,8 @@ switch ($Action) {
                 -Dangerous:$Dangerous `
                 -StopOnError:$StopOnError `
                 -BackupPathOverride $BackupPath `
-                -SessionFile $session.SessionFile
+                -SessionFile $session.SessionFile `
+                -ProgressFile $progressFile
         } catch {
             Write-SessionEvent -SessionFile $session.SessionFile -Level Error -Message "Apply failed: $_"
             if ($OutputJson) {
@@ -256,12 +253,13 @@ switch ($Action) {
 
         if ($OutputJson) {
             $result = [PSCustomObject]@{
-                Action    = 'Apply'
-                Profile   = $data.Profile
-                Score     = $finalScore
-                Changes   = $engineResult.Changes
-                Backup    = $engineResult.Backup
-                SessionId = $session.SessionId
+                Action       = 'Apply'
+                Profile      = $data.Profile
+                Score        = $finalScore
+                Changes      = $engineResult.Changes
+                Backup       = $engineResult.Backup
+                SessionId    = $session.SessionId
+                ProgressFile = $progressFile
             }
             Write-Output ($result | ConvertTo-Json -Depth 10)
         } else {
@@ -278,6 +276,11 @@ switch ($Action) {
             }
             $htmlPath = Join-Path $OutputDir "apply-$Profile-$(Get-Date -Format 'yyyyMMdd-HHmmss').html"
             $null = Out-HtmlReport -Score $finalScore -Snapshot $finalSnapshot -Profile $data.Profile -Changes $engineResult.Changes -OutputPath $htmlPath
+        }
+
+        $failedCount = @($engineResult.Changes | Where-Object { -not $_.Success }).Count
+        if ($failedCount -gt 0 -and -not $StopOnError) {
+            exit 2
         }
 
         exit 0

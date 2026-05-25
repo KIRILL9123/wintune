@@ -4,19 +4,39 @@ namespace WinTune.Gui.ViewModels;
 
 public sealed class ApplyProgressViewModel : ViewModelBase
 {
-    private int _overallPercent = 35;
+    private int _overallPercent;
     public int OverallPercent
     {
         get => _overallPercent;
         set { _overallPercent = value; RaisePropertyChanged(); }
     }
 
-    public ObservableCollection<ApplyRow> Rows { get; } = new()
+    private string? _profileName;
+    public string StatusText => IsLoading
+        ? $"Applying profile: {_profileName ?? "..."}"
+        : IsComplete
+            ? "All tweaks have been applied."
+            : "Ready to apply.";
+
+    public bool IsComplete => !IsLoading && OverallPercent >= 100;
+
+    public ObservableCollection<ApplyRow> Rows { get; } = new();
+
+    public async System.Threading.Tasks.Task StartApplyAsync(string profileName)
     {
-        new ApplyRow("remove-bing-news", "pending"),
-        new ApplyRow("disable-telemetry", "running"),
-        new ApplyRow("remove-copilot", "done")
-    };
+        _profileName = profileName;
+        IsLoading = true;
+        Error = null;
+        OverallPercent = 0;
+        RaisePropertyChanged(nameof(StatusText));
+
+        // TODO Block B: streaming progress from PsRunner
+
+        IsLoading = false;
+        OverallPercent = 100;
+        RaisePropertyChanged(nameof(StatusText));
+        RaisePropertyChanged(nameof(IsComplete));
+    }
 }
 
 public sealed record ApplyRow(string TweakId, string Status)

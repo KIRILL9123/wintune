@@ -14,4 +14,10 @@ public partial class DashboardView : UserControl
             await vm.LoadAsync();
         };
     }
+
+    private async void OnRefreshClick(object sender, System.Windows.RoutedEventArgs e)
+    {
+        var vm = (DashboardViewModel)DataContext;
+        await vm.LoadAsync();
+    }
 }
