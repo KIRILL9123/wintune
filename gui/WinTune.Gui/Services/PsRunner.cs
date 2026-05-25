@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace WinTune.Gui.Services;
@@ -8,6 +9,7 @@ namespace WinTune.Gui.Services;
 public sealed class PsRunner
 {
     private readonly string _repoRoot;
+    private static readonly TimeSpan Timeout = TimeSpan.FromMinutes(5);
 
     public PsRunner(string repoRoot)
     {
@@ -44,12 +46,36 @@ public sealed class PsRunner
             CreateNoWindow = true
         };
 
+        using var cts = new CancellationTokenSource(Timeout);
         using var proc = Process.Start(psi)!;
-        var stdout = await proc.StandardOutput.ReadToEndAsync();
-        var stderr = await proc.StandardError.ReadToEndAsync();
-        await proc.WaitForExitAsync();
 
-        return new PsResult(proc.ExitCode, stdout, stderr);
+        try
+        {
+            var stdoutTask = proc.StandardOutput.ReadToEndAsync();
+            var stderrTask = proc.StandardError.ReadToEndAsync();
+
+            await proc.WaitForExitAsync(cts.Token);
+
+            var stdout = await stdoutTask;
+            var stderr = await stderrTask;
+
+            if (!string.IsNullOrWhiteSpace(stderr))
+            {
+                Console.Error.WriteLine($"[PsRunner] stderr from powershell: {stderr}");
+            }
+
+            return new PsResult(proc.ExitCode, stdout, stderr);
+        }
+        catch (OperationCanceledException)
+        {
+            if (!proc.HasExited)
+            {
+                proc.Kill(entireProcessTree: true);
+            }
+
+            var partial = proc.ExitCode == 0 ? "" : proc.StandardOutput.ReadToEnd();
+            return new PsResult(-1, partial ?? "", "Process timed out and was killed.");
+        }
     }
 }
 
