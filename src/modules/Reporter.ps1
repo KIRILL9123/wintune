@@ -18,8 +18,8 @@ function Get-Score {
         return [PSCustomObject]@{ Total = 0; Present = 0; Removed = 0; Score = 100 }
     }
 
-    $total = $tweakIds.Count
-    $present = 0
+    $windowsBuild = $Snapshot.WindowsBuild
+    if (-not $windowsBuild) { $windowsBuild = 0 }
 
     $dbPackages = @{}
     foreach ($p in @($BloatDatabase.packages)) { if ($p.id) { $dbPackages[$p.id] = $p } }
@@ -38,23 +38,51 @@ function Get-Score {
     $snapshotRegistry = $Snapshot.Registry
     if (-not $snapshotRegistry) { $snapshotRegistry = @{} }
 
+    $total = 0
+    $present = 0
+
     foreach ($id in $tweakIds) {
         if (-not $id) { continue }
         $detected = $false
+        $entry = $null
 
         if ($dbPackages.ContainsKey($id)) {
             $entry = $dbPackages[$id]
-            $detected = @($snapshotPackages | Where-Object { $_.Name -like $entry.name }).Count -gt 0
         } elseif ($dbServices.ContainsKey($id)) {
             $entry = $dbServices[$id]
-            $detected = @($snapshotServices | Where-Object { $_.Name -eq $entry.name }).Count -gt 0
         } elseif ($dbTasks.ContainsKey($id)) {
             $entry = $dbTasks[$id]
-            $detected = @($snapshotTasks | Where-Object { "$($_.TaskPath)$($_.TaskName)" -like "*$($entry.name)*" }).Count -gt 0
         } elseif ($dbRegistry.ContainsKey($id)) {
-            $detected = $null -ne $snapshotRegistry.$id
+            $entry = $dbRegistry[$id]
         } elseif ($dbCommands.ContainsKey($id)) {
-            $detected = Test-CommandDetected -TweakId $id
+            $entry = $dbCommands[$id]
+        }
+
+        if (-not $entry) { continue }
+
+        if (($entry.buildMin -gt 0 -and $windowsBuild -lt $entry.buildMin) -or
+            ($entry.buildMax -gt 0 -and $windowsBuild -gt $entry.buildMax)) {
+            continue
+        }
+
+        $total++
+
+        switch ($entry.type) {
+            'package' {
+                $detected = @($snapshotPackages | Where-Object { $_.Name -like $entry.name }).Count -gt 0
+            }
+            'service' {
+                $detected = @($snapshotServices | Where-Object { $_.Name -eq $entry.name }).Count -gt 0
+            }
+            'task' {
+                $detected = @($snapshotTasks | Where-Object { "$($_.TaskPath)$($_.TaskName)" -like "*$($entry.name)*" }).Count -gt 0
+            }
+            'registry' {
+                $detected = $null -ne $snapshotRegistry.$id
+            }
+            'command' {
+                $detected = Test-CommandDetected -TweakId $id
+            }
         }
 
         if ($detected) { $present++ }

@@ -220,8 +220,13 @@ switch ($Action) {
             }
 
             Write-SessionEvent -SessionFile $session.SessionFile -Level Info -Message "WhatIf: $($data.Score.Present) items would be cleaned"
-            exit 0
+        $failedCount = @($engineResult.Changes | Where-Object { -not $_.Success }).Count
+        if ($failedCount -gt 0 -and -not $StopOnError) {
+            exit 2
         }
+
+        exit 0
+    }
 
         Write-Progress -Activity "WinTune" -Status "Applying tweaks..." -PercentComplete 50
         try {
