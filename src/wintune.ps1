@@ -301,7 +301,17 @@ switch ($Action) {
         }
 
         Write-Progress -Activity "WinTune" -Status "Restoring backup..." -PercentComplete 50
-        $results = Restore-Backup -Session $Session -BackupPathOverride $BackupPath
+        try {
+            $results = Restore-Backup -Session $Session -BackupPathOverride $BackupPath
+        } catch {
+            Write-SessionEvent -SessionFile $session.SessionFile -Level Error -Message "Revert failed: $_"
+            if ($OutputJson) {
+                Write-Output (ConvertTo-Json @{ success = $false; error = "$_" })
+            } else {
+                Write-Error "Revert failed: $_"
+            }
+            exit 1
+        }
         Write-Progress -Activity "WinTune" -Status "Done" -PercentComplete 100 -Completed
 
         $okCount = @($results | Where-Object { $_.Reverted }).Count

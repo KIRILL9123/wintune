@@ -52,16 +52,18 @@ function New-Backup {
         CreatedAt    = (Get-Date).ToString('o')
         RestorePoint = $null
         RegistryFile = $regFile
-        Changes      = $Changes | ForEach-Object {
+        Changes      = $Changes | ForEach-Object -Begin { $seq = 0 } -Process {
+            $seq++
             [PSCustomObject]@{
-                TweakId        = $_.TweakId
-                Type           = $_.Type
-                Name           = $_.Name
-                OriginalValue  = $_.OriginalValue
-                NewValue       = $_.NewValue
-                Timestamp      = $_.Timestamp
-                Success        = $_.Success
-                Error          = $_.Error
+                SequenceNumber  = $seq
+                TweakId         = $_.TweakId
+                Type            = $_.Type
+                Name            = $_.Name
+                OriginalValue   = $_.OriginalValue
+                NewValue        = $_.NewValue
+                Timestamp       = $_.Timestamp
+                Success         = $_.Success
+                Error           = $_.Error
             }
         }
     }
@@ -84,6 +86,71 @@ function New-Backup {
 }
 
 function Restore-Backup {
+    <#
+    .SYNOPSIS
+        Reverts changes from a backup session in reverse application order.
+
+    .DESCRIPTION
+        Reads a backup manifest, validates its structure, then reverts each
+        change entry in reverse SequenceNumber order (last-applied first).
+        The function reports per-change success/failure and skips unknown types.
+
+    .PARAMETER Session
+        The backup session timestamp (folder name under backups/).
+
+    .PARAMETER BackupPathOverride
+        Optional override for the backup base directory. Useful for testing.
+
+    .OUTPUTS
+        PSCustomObject[]. Each result has: TweakId, Type, Name, Reverted (bool),
+        Error (string or $null).
+
+    .NOTES
+        ROLLBACK LIMITATIONS by type:
+
+        registry
+          Fully revertible — sets the original value back.
+          Does NOT delete registry keys that the tweak may have created.
+          Requires the PSDrive provider (HKLM: / HKCU:) to be available.
+
+        service
+          Partially revertible — restores StartupType and attempts to
+          Start/Stop the service to match the original Status.
+          If the service was deleted after backup, Get-Service fails and
+          the revert is reported as an error.
+          StartType revert respects the original value (string or hashtable
+          with StartType + Status).
+
+        task
+          Partially revertible — re-enables a scheduled task that was
+          disabled. Does NOT recreate tasks that were deleted.
+          Silently skips if the task no longer exists.
+
+        package
+          NOT revertible — package reinstall is not implemented. Emits a
+          warning and skips. An idempotent guard prevents re-application
+          of already-removed packages.
+
+        command
+          NOT revertible — command undo is not implemented. Emits a
+          warning and skips. Commands like disabling hibernation or
+          OneDrive cannot be reversed automatically.
+
+        GENERAL LIMITATIONS:
+          - A backup is required for revert. No backup = no revert.
+          - If a backup manifest was tampered with (missing TweakId, Type,
+            or OriginalValue for registry/service/task), the invalid entry
+            is reported as an error and skipped.
+          - Partial failures: one change may fail while others succeed.
+            Each result has an independent Reverted flag.
+          - System Restore Point creation is best-effort and silently
+            skipped if unavailable (e.g., when System Restore is disabled).
+          - The manifest stores OriginalValue captured BEFORE mutation.
+            If the system state changed externally between backup and
+            revert (e.g., a user manually changed a registry value),
+            reverting to the original value may not restore the expected
+            state.
+    #>
     param(
         [Parameter(Mandatory=$true)]
         [string]$Session,
@@ -93,23 +160,70 @@ function Restore-Backup {
     )
 
     $backupDir = Get-BackupPath -SessionTimestamp $Session -OverrideBase $BackupPathOverride
-    $manifestPath = Join-Path $backupDir "manifest.json"
+    if (-not (Test-Path $backupDir)) {
+        throw "Backup directory not found for session '$Session' at $backupDir"
+    }
 
+    $manifestPath = Join-Path $backupDir "manifest.json"
     if (-not (Test-Path $manifestPath)) {
         throw "Backup manifest not found for session '$Session' at $manifestPath"
     }
 
-    $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
-    $changes = $manifest.Changes | Sort-Object Timestamp -Descending
+    try {
+        $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
+    } catch {
+        throw "Failed to parse manifest for session '$Session': $_"
+    }
+
+    if (-not $manifest.Session) {
+        Write-Warning "Manifest for session '$Session' is missing Session metadata"
+    }
+
+    $changes = @($manifest.Changes)
+    if ($changes.Count -eq 0) {
+        Write-Warning "No changes found in manifest for session '$Session'"
+        return @()
+    }
+
+    if ($changes[0].SequenceNumber -ne $null) {
+        $changes = $changes | Sort-Object SequenceNumber -Descending
+    } else {
+        $changes = $changes | Sort-Object Timestamp -Descending
+    }
 
     $results = @()
     foreach ($change in $changes) {
+        if (-not $change.TweakId -or -not $change.Type) {
+            $results += [PSCustomObject]@{
+                TweakId  = $change.TweakId
+                Type     = $change.Type
+                Name     = $change.Name
+                Reverted = $false
+                Error    = "Invalid change entry: missing TweakId or Type"
+            }
+            continue
+        }
+
         $result = [PSCustomObject]@{
             TweakId  = $change.TweakId
             Type     = $change.Type
             Name     = $change.Name
             Reverted = $false
             Error    = $null
+        }
+
+        if ($null -eq $change.OriginalValue -and
+            $change.Type -ne 'package' -and
+            $change.Type -ne 'command') {
+            $result.Error = "Missing OriginalValue for type '$($change.Type)'"
+            $results += $result
+            continue
+        }
+
+        if (-not $change.Name) {
+            $result.Error = "Missing Name for change entry"
+            $results += $result
+            continue
         }
 
         try {
@@ -142,16 +256,19 @@ function Restore-Backup {
                     }
                 }
                 'package' {
-                    Write-Warning "Package reinstall not supported yet: $($change.Name)"
+                    throw "Package reinstall not supported yet: $($change.Name)"
                 }
                 'command' {
-                    Write-Warning "Command revert not supported yet: $($change.Name)"
+                    throw "Command revert not supported yet: $($change.Name)"
                 }
                 'task' {
                     $task = Get-ScheduledTask -TaskName $change.Name -ErrorAction SilentlyContinue
                     if ($task -and $change.OriginalValue -ne 'Disabled') {
                         Enable-ScheduledTask -TaskName $change.Name -ErrorAction Stop
                     }
+                }
+                default {
+                    throw "Unknown type '$($change.Type)' for tweak '$($change.TweakId)'"
                 }
             }
             $result.Reverted = $true
@@ -162,5 +279,5 @@ function Restore-Backup {
         $results += $result
     }
 
-    return $results
+    return ,$results
 }

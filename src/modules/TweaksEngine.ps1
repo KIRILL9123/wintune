@@ -149,7 +149,9 @@ function Invoke-TweaksEngine {
     $tweakScriptsDir = Join-Path (Split-Path $PSScriptRoot -Parent) "tweaks"
     $tweakCategories = @('privacy', 'performance', 'ui', 'debloat')
 
+    $seq = 0
     foreach ($item in $pendingItems) {
+        $seq++
         $tweak = $item.Tweak
         $tweakScript = $null
         foreach ($cat in $tweakCategories) {
@@ -161,14 +163,15 @@ function Invoke-TweaksEngine {
         }
 
         $change = [PSCustomObject]@{
-            TweakId       = $tweak.TweakId
-            Type          = $tweak.Type
-            Name          = $tweak.Name
-            OriginalValue = $item.OriginalValue
-            NewValue      = $null
-            Timestamp     = (Get-Date).ToString('o')
-            Success       = $false
-            Error         = $null
+            TweakId         = $tweak.TweakId
+            Type            = $tweak.Type
+            Name            = $tweak.Name
+            OriginalValue   = $item.OriginalValue
+            NewValue        = $null
+            Timestamp       = (Get-Date).ToString('o')
+            Success         = $false
+            Error           = $null
+            SequenceNumber  = $seq
         }
 
         try {
@@ -199,16 +202,18 @@ function Invoke-TweaksEngine {
 
     if ($backup -and $changes.Count -gt 0) {
         $manifest = Get-Content $backup.ManifestPath -Raw | ConvertFrom-Json
-        $manifest.Changes = $changes | ForEach-Object {
+        $manifest.Changes = $changes | ForEach-Object -Begin { $seq = 0 } -Process {
+            $seq++
             [PSCustomObject]@{
-                TweakId       = $_.TweakId
-                Type          = $_.Type
-                Name          = $_.Name
-                OriginalValue = $_.OriginalValue
-                NewValue      = $_.NewValue
-                Timestamp     = $_.Timestamp
-                Success       = $_.Success
-                Error         = $_.Error
+                SequenceNumber  = $seq
+                TweakId         = $_.TweakId
+                Type            = $_.Type
+                Name            = $_.Name
+                OriginalValue   = $_.OriginalValue
+                NewValue        = $_.NewValue
+                Timestamp       = $_.Timestamp
+                Success         = $_.Success
+                Error           = $_.Error
             }
         }
         $manifest | ConvertTo-Json -Depth 10 | Set-Content $backup.ManifestPath -Encoding UTF8
