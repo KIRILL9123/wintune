@@ -185,22 +185,31 @@ switch ($Action) {
         $session = Initialize-LogSession -Action $Action
         Write-SessionEvent -SessionFile $session.SessionFile -Level Info -Message "Apply started for profile '$Profile'"
 
-        $needsEngine = $true
-
         if ($OutputJson) {
-            $WhatIf = $false
             $Confirm = $false
         }
 
         $data = Get-AuditData -ProfileName $Profile
 
+        if ($data.Profile.Dangerous -and -not $Dangerous) {
+            $msg = "Profile '$Profile' is marked as dangerous. Use -Dangerous to confirm."
+            Write-SessionEvent -SessionFile $session.SessionFile -Level Error -Message $msg
+            if ($OutputJson) {
+                Write-Output (ConvertTo-Json @{ success = $false; error = $msg })
+            } else {
+                Write-Error $msg
+            }
+            exit 1
+        }
+
         if ($WhatIf) {
             if ($OutputJson) {
                 $result = [PSCustomObject]@{
-                    Action    = 'WhatIf'
-                    Profile   = $data.Profile
-                    Score     = $data.Score
-                    SessionId = $session.SessionId
+                    Action       = 'WhatIf'
+                    Profile      = $data.Profile
+                    Score        = $data.Score
+                    PendingItems = $data.Score.Present
+                    SessionId    = $session.SessionId
                 }
                 Write-Output ($result | ConvertTo-Json -Depth 10)
             } else {
@@ -211,11 +220,11 @@ switch ($Action) {
             }
 
             Write-SessionEvent -SessionFile $session.SessionFile -Level Info -Message "WhatIf: $($data.Score.Present) items would be cleaned"
-            $needsEngine = $false
+            exit 0
         }
 
-        if ($needsEngine) {
-            Write-Progress -Activity "WinTune" -Status "Applying tweaks..." -PercentComplete 50
+        Write-Progress -Activity "WinTune" -Status "Applying tweaks..." -PercentComplete 50
+        try {
             $engineResult = Invoke-TweaksEngine -ProfileName $Profile `
                 -Snapshot $data.Snapshot `
                 -WhatIf:$WhatIf `
@@ -223,38 +232,46 @@ switch ($Action) {
                 -Dangerous:$Dangerous `
                 -StopOnError:$StopOnError `
                 -BackupPathOverride $BackupPath
-
-            Write-Progress -Activity "WinTune" -Status "Finalizing..." -PercentComplete 90
-            $finalSnapshot = Invoke-Scanner
-            $finalScore = Get-Score -Snapshot $finalSnapshot -TweakIds $data.Profile.Tweaks -BloatDatabase $data.BloatDb
-
-            Write-SessionEvent -SessionFile $session.SessionFile -Level Info -Message "Apply completed: score $($finalScore.Score)%, $($engineResult.Changes.Count) changes"
-
+        } catch {
+            Write-SessionEvent -SessionFile $session.SessionFile -Level Error -Message "Apply failed: $_"
             if ($OutputJson) {
-                $result = [PSCustomObject]@{
-                    Action    = 'Apply'
-                    Profile   = $data.Profile
-                    Score     = $finalScore
-                    Changes   = $engineResult.Changes
-                    Backup    = $engineResult.Backup
-                    SessionId = $session.SessionId
-                }
-                Write-Output ($result | ConvertTo-Json -Depth 10)
+                Write-Output (ConvertTo-Json @{ success = $false; error = "$_" })
             } else {
-                Out-ConsoleReport -Score $finalScore -Snapshot $finalSnapshot -Profile $data.Profile -Changes $engineResult.Changes
-                if ($engineResult.Backup) {
-                    Write-Host "Backup saved to: $($engineResult.Backup.BackupDir)"
-                }
-                Write-Host "Session log: $($session.SessionDir)"
+                Write-Error "Apply failed: $_"
             }
+            exit 1
+        }
 
-            if ($OutputDir) {
-                if (-not (Test-Path $OutputDir)) {
-                    $null = New-Item -Path $OutputDir -ItemType Directory -Force
-                }
-                $htmlPath = Join-Path $OutputDir "apply-$Profile-$(Get-Date -Format 'yyyyMMdd-HHmmss').html"
-                $null = Out-HtmlReport -Score $finalScore -Snapshot $finalSnapshot -Profile $data.Profile -Changes $engineResult.Changes -OutputPath $htmlPath
+        Write-Progress -Activity "WinTune" -Status "Finalizing..." -PercentComplete 90
+        $finalSnapshot = Invoke-Scanner
+        $finalScore = Get-Score -Snapshot $finalSnapshot -TweakIds $data.Profile.Tweaks -BloatDatabase $data.BloatDb
+
+        Write-SessionEvent -SessionFile $session.SessionFile -Level Info -Message "Apply completed: score $($finalScore.Score)%, $($engineResult.Changes.Count) changes"
+
+        if ($OutputJson) {
+            $result = [PSCustomObject]@{
+                Action    = 'Apply'
+                Profile   = $data.Profile
+                Score     = $finalScore
+                Changes   = $engineResult.Changes
+                Backup    = $engineResult.Backup
+                SessionId = $session.SessionId
             }
+            Write-Output ($result | ConvertTo-Json -Depth 10)
+        } else {
+            Out-ConsoleReport -Score $finalScore -Snapshot $finalSnapshot -Profile $data.Profile -Changes $engineResult.Changes
+            if ($engineResult.Backup) {
+                Write-Host "Backup saved to: $($engineResult.Backup.BackupDir)"
+            }
+            Write-Host "Session log: $($session.SessionDir)"
+        }
+
+        if ($OutputDir) {
+            if (-not (Test-Path $OutputDir)) {
+                $null = New-Item -Path $OutputDir -ItemType Directory -Force
+            }
+            $htmlPath = Join-Path $OutputDir "apply-$Profile-$(Get-Date -Format 'yyyyMMdd-HHmmss').html"
+            $null = Out-HtmlReport -Score $finalScore -Snapshot $finalSnapshot -Profile $data.Profile -Changes $engineResult.Changes -OutputPath $htmlPath
         }
 
         exit 0

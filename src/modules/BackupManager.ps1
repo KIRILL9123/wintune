@@ -126,16 +126,30 @@ function Restore-Backup {
                 }
                 'service' {
                     $svc = Get-Service -Name $change.Name -ErrorAction SilentlyContinue
-                    if ($svc -and $change.OriginalValue) {
-                        Set-Service -Name $change.Name -StartupType $change.OriginalValue -ErrorAction Stop
+                    if (-not $svc) { throw "Service not found: $($change.Name)" }
+                    if ($change.OriginalValue -is [hashtable] -or $change.OriginalValue -is [PSCustomObject]) {
+                        $svcStartType = $change.OriginalValue.StartType
+                        $svcStatus = $change.OriginalValue.Status
+                    } else {
+                        $svcStartType = $change.OriginalValue
+                        $svcStatus = $null
+                    }
+                    if ($svcStartType) {
+                        Set-Service -Name $change.Name -StartupType $svcStartType -ErrorAction Stop
+                    }
+                    if ($svcStatus -eq 'Running') {
+                        Start-Service -Name $change.Name -ErrorAction SilentlyContinue
                     }
                 }
                 'package' {
                     Write-Warning "Package reinstall not supported yet: $($change.Name)"
                 }
+                'command' {
+                    Write-Warning "Command revert not supported yet: $($change.Name)"
+                }
                 'task' {
                     $task = Get-ScheduledTask -TaskName $change.Name -ErrorAction SilentlyContinue
-                    if ($task) {
+                    if ($task -and $change.OriginalValue -ne 'Disabled') {
                         Enable-ScheduledTask -TaskName $change.Name -ErrorAction Stop
                     }
                 }

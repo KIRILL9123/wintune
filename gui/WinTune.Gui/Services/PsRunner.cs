@@ -1,9 +1,7 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using System.Management.Automation;
-using System.Management.Automation.Runspaces;
 
 namespace WinTune.Gui.Services;
 
@@ -22,14 +20,7 @@ public sealed class PsRunner
         {
             var scriptPath = Path.Combine(_repoRoot, "src", "wintune.ps1");
 
-            var initialState = InitialSessionState.CreateDefault();
-            initialState.ExecutionPolicy = ExecutionPolicy.Bypass;
-
-            using var runspace = RunspaceFactory.CreateRunspace(initialState);
-            runspace.Open();
-
             using var ps = PowerShell.Create();
-            ps.Runspace = runspace;
             ps.AddCommand("powershell");
             ps.AddArgument("-NoProfile");
             ps.AddArgument("-ExecutionPolicy");

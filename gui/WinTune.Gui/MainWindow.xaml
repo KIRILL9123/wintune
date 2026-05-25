@@ -4,20 +4,20 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:views="clr-namespace:WinTune.Gui.Views"
-        xmlns:modern="http://schemas.modernwpf.com/2019"
+        xmlns:ui="http://schemas.modernwpf.com/2019"
         mc:Ignorable="d"
         Title="WinTune" Width="1200" Height="720"
         WindowStartupLocation="CenterScreen">
   <Grid>
-    <modern:NavigationView x:Name="Nav" PaneDisplayMode="Left" IsBackButtonVisible="Collapsed">
-      <modern:NavigationView.MenuItems>
-        <modern:NavigationViewItem Content="Dashboard" Tag="Dashboard" IsSelected="True" />
-        <modern:NavigationViewItem Content="Profiles" Tag="Profiles" />
-        <modern:NavigationViewItem Content="Audit Results" Tag="Audit" />
-        <modern:NavigationViewItem Content="Apply" Tag="Apply" />
-        <modern:NavigationViewItem Content="Revert" Tag="Revert" />
-      </modern:NavigationView.MenuItems>
-      <modern:NavigationView.Content>
+    <ui:NavigationView x:Name="Nav" PaneDisplayMode="Left" IsBackButtonVisible="Collapsed">
+      <ui:NavigationView.MenuItems>
+        <ui:NavigationViewItem Content="Dashboard" Tag="Dashboard" IsSelected="True" />
+        <ui:NavigationViewItem Content="Profiles" Tag="Profiles" />
+        <ui:NavigationViewItem Content="Audit Results" Tag="Audit" />
+        <ui:NavigationViewItem Content="Apply" Tag="Apply" />
+        <ui:NavigationViewItem Content="Revert" Tag="Revert" />
+      </ui:NavigationView.MenuItems>
+      <ui:NavigationView.Content>
         <Grid>
           <views:DashboardView x:Name="DashboardView" Visibility="Visible" />
           <views:ProfileSelectorView x:Name="ProfileSelectorView" Visibility="Collapsed" />
@@ -25,7 +25,7 @@
           <views:ApplyProgressView x:Name="ApplyProgressView" Visibility="Collapsed" />
           <views:RevertView x:Name="RevertView" Visibility="Collapsed" />
         </Grid>
-      </modern:NavigationView.Content>
-    </modern:NavigationView>
+      </ui:NavigationView.Content>
+    </ui:NavigationView>
   </Grid>
 </Window>

@@ -61,17 +61,26 @@ function Invoke-TweaksEngine {
             $entry = $dbPackages[$tweakId]
             $tweakType = 'package'
             $tweakName = $entry.name
-            $detected = ($Snapshot.Packages | Where-Object { $_.Name -like $entry.name }).Count -gt 0
+            $detected = $false
+            foreach ($pkg in $Snapshot.Packages) {
+                if ($pkg.Name -like $entry.name) { $detected = $true; break }
+            }
         } elseif ($dbServices.ContainsKey($tweakId)) {
             $entry = $dbServices[$tweakId]
             $tweakType = 'service'
             $tweakName = $entry.name
-            $detected = ($Snapshot.Services | Where-Object { $_.Name -eq $entry.name }).Count -gt 0
+            $detected = $false
+            foreach ($svc in $Snapshot.Services) {
+                if ($svc.Name -eq $entry.name) { $detected = $true; break }
+            }
         } elseif ($dbTasks.ContainsKey($tweakId)) {
             $entry = $dbTasks[$tweakId]
             $tweakType = 'task'
             $tweakName = $entry.name
-            $detected = ($Snapshot.Tasks | Where-Object { "$($_.TaskPath)$($_.TaskName)" -like "*$($entry.name)*" }).Count -gt 0
+            $detected = $false
+            foreach ($task in $Snapshot.Tasks) {
+                if ("$($task.TaskPath)$($task.TaskName)" -like "*$($entry.name)*") { $detected = $true; break }
+            }
         } elseif ($dbRegistry.ContainsKey($tweakId)) {
             $entry = $dbRegistry[$tweakId]
             $tweakType = 'registry'
@@ -111,10 +120,37 @@ function Invoke-TweaksEngine {
         }
     }
 
+    Write-Progress -Activity "WinTune" -Status "Capturing original state..." -PercentComplete 45
+    $pendingItems = foreach ($tweak in $pendingTweaks) {
+        $origValue = Read-OriginalValue -Tweak $tweak -Snapshot $Snapshot
+        [PSCustomObject]@{
+            Tweak         = $tweak
+            OriginalValue = $origValue
+        }
+    }
+
+    if ($pendingItems.Count -gt 0) {
+        Write-Progress -Activity "WinTune" -Status "Creating backup before changes..." -PercentComplete 50
+        $preChanges = $pendingItems | ForEach-Object {
+            [PSCustomObject]@{
+                TweakId       = $_.Tweak.TweakId
+                Type          = $_.Tweak.Type
+                Name          = $_.Tweak.Name
+                OriginalValue = $_.OriginalValue
+                NewValue      = $null
+                Timestamp     = (Get-Date).ToString('o')
+                Success       = $false
+                Error         = $null
+            }
+        }
+        $backup = New-Backup -ProfileName $ProfileName -Changes $preChanges -BackupPathOverride $BackupPathOverride
+    }
+
     $tweakScriptsDir = Join-Path (Split-Path $PSScriptRoot -Parent) "tweaks"
     $tweakCategories = @('privacy', 'performance', 'ui', 'debloat')
 
-    foreach ($tweak in $pendingTweaks) {
+    foreach ($item in $pendingItems) {
+        $tweak = $item.Tweak
         $tweakScript = $null
         foreach ($cat in $tweakCategories) {
             $candidate = Join-Path (Join-Path $tweakScriptsDir $cat) "$($tweak.TweakId).ps1"
@@ -128,7 +164,7 @@ function Invoke-TweaksEngine {
             TweakId       = $tweak.TweakId
             Type          = $tweak.Type
             Name          = $tweak.Name
-            OriginalValue = $null
+            OriginalValue = $item.OriginalValue
             NewValue      = $null
             Timestamp     = (Get-Date).ToString('o')
             Success       = $false
@@ -136,8 +172,6 @@ function Invoke-TweaksEngine {
         }
 
         try {
-            $change.OriginalValue = Read-OriginalValue -Tweak $tweak -Snapshot $Snapshot
-
             if ($tweakScript) {
                 . $tweakScript
                 $functionName = "Invoke-$($tweak.TweakId -replace '-', '')"
@@ -163,19 +197,26 @@ function Invoke-TweaksEngine {
         $changes += $change
     }
 
-    if ($changes.Count -gt 0) {
-        Write-Progress -Activity "WinTune" -Status "Creating backup..." -PercentComplete 85
-        $backup = New-Backup -ProfileName $ProfileName -Changes $changes -BackupPathOverride $BackupPathOverride
-        return [PSCustomObject]@{
-            Changes = $changes
-            Backup  = $backup
-            Score   = $null
+    if ($backup -and $changes.Count -gt 0) {
+        $manifest = Get-Content $backup.ManifestPath -Raw | ConvertFrom-Json
+        $manifest.Changes = $changes | ForEach-Object {
+            [PSCustomObject]@{
+                TweakId       = $_.TweakId
+                Type          = $_.Type
+                Name          = $_.Name
+                OriginalValue = $_.OriginalValue
+                NewValue      = $_.NewValue
+                Timestamp     = $_.Timestamp
+                Success       = $_.Success
+                Error         = $_.Error
+            }
         }
+        $manifest | ConvertTo-Json -Depth 10 | Set-Content $backup.ManifestPath -Encoding UTF8
     }
 
     return [PSCustomObject]@{
         Changes = $changes
-        Backup  = $null
+        Backup  = $backup
         Score   = $null
     }
 }
@@ -196,7 +237,7 @@ function Read-OriginalValue {
         }
         'service' {
             $svc = Get-CimInstance -ClassName Win32_Service -Filter "Name='$($Tweak.Name)'" -ErrorAction SilentlyContinue
-            if ($svc) { return $svc.StartMode }
+            if ($svc) { return @{ StartType = $svc.StartMode; Status = $svc.Status } }
         }
         'task' {
             $task = Get-ScheduledTask -ErrorAction SilentlyContinue |
@@ -216,7 +257,8 @@ function Read-OriginalValue {
             }
         }
         'command' {
-            return 'enabled'
+            if (Test-CommandDetected -TweakId $Tweak.TweakId) { return 'enabled' }
+            return 'disabled'
         }
     }
 
@@ -246,35 +288,57 @@ function Invoke-TweakGeneric {
     switch ($Tweak.Type) {
         'package' {
             $pkg = $Snapshot.Packages | Where-Object { $_.Name -like $Tweak.Name } | Select-Object -First 1
-            if ($pkg) {
-                Remove-AppxPackage -Package $pkg.PackageFullName -ErrorAction Stop
-                Write-Host "  Removed package: $($pkg.Name)"
+            if (-not $pkg) {
+                Write-Host "  Already removed: $($Tweak.Name)"
+                return
             }
+            Remove-AppxPackage -Package $pkg.PackageFullName -ErrorAction Stop
+            Write-Host "  Removed package: $($pkg.Name)"
         }
         'service' {
             $svc = Get-Service -Name $Tweak.Name -ErrorAction SilentlyContinue
-            if ($svc -and $svc.Status -eq 'Running') {
+            if (-not $svc) {
+                Write-Host "  Service not found: $($Tweak.Name)"
+                return
+            }
+            if ($svc.StartType -eq 'Disabled') {
+                Write-Host "  Already disabled: $($Tweak.Name)"
+                return
+            }
+            if ($svc.Status -eq 'Running') {
                 Stop-Service -Name $Tweak.Name -Force -ErrorAction Stop
             }
-            if ($svc) {
-                Set-Service -Name $Tweak.Name -StartupType Disabled -ErrorAction Stop
-                Write-Host "  Disabled service: $($Tweak.Name)"
-            }
+            Set-Service -Name $Tweak.Name -StartupType Disabled -ErrorAction Stop
+            Write-Host "  Disabled service: $($Tweak.Name)"
         }
         'task' {
             $task = Get-ScheduledTask -ErrorAction SilentlyContinue |
                 Where-Object { "$($_.TaskPath)$($_.TaskName)" -like "*$($Tweak.Name)*" } |
                 Select-Object -First 1
-            if ($task) {
-                Disable-ScheduledTask -TaskName $task.TaskName -TaskPath $task.TaskPath -ErrorAction Stop
-                Write-Host "  Disabled task: $($Tweak.Name)"
+            if (-not $task) {
+                Write-Host "  Task not found: $($Tweak.Name)"
+                return
             }
+            if ($task.State -eq 'Disabled') {
+                Write-Host "  Already disabled: $($Tweak.Name)"
+                return
+            }
+            Disable-ScheduledTask -TaskName $task.TaskName -TaskPath $task.TaskPath -ErrorAction Stop
+            Write-Host "  Disabled task: $($Tweak.Name)"
         }
         'registry' {
             $keyParts = $Tweak.Name -split '\\'
             $valueName = $keyParts[-1]
             $keyPath = $keyParts[0..($keyParts.Length - 2)] -join '\'
             $psPath = $keyPath -replace '^HKLM\\', 'HKLM:\' -replace '^HKCU\\', 'HKCU:\'
+            try {
+                $current = (Get-ItemProperty -Path $psPath -Name $valueName -ErrorAction Stop).$valueName
+                if ($current -eq 0 -or $current -eq '0') {
+                    Write-Host "  Already set: $($Tweak.Name) = 0"
+                    return
+                }
+            } catch {
+            }
             if (-not (Test-Path $psPath)) {
                 $null = New-Item -Path $psPath -Force -ErrorAction Stop
             }
@@ -283,6 +347,11 @@ function Invoke-TweakGeneric {
         }
         'command' {
             if ($Tweak.TweakId -eq 'disable-hibernation') {
+                $hiberStatus = powercfg /a 2>$null | Select-String -Pattern 'Hibernation' -SimpleMatch
+                if (-not $hiberStatus) {
+                    Write-Host "  Already disabled: Hibernation"
+                    return
+                }
                 powercfg /h off *>$null
                 Write-Host "  Disabled: Hibernation (powercfg /h off)"
             }
