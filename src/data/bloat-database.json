@@ -99,8 +99,7 @@
       "detect": "Get-Service -Name WSearch -ErrorAction SilentlyContinue",
       "buildMin": 22000,
       "buildMax": 0
-    },
-
+    }
   ],
   "tasks": [
     {

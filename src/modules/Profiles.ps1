@@ -1,9 +1,10 @@
 function Get-ProfilePath {
     $script:ProfilesDir = Join-Path (Split-Path $PSScriptRoot -Parent) "profiles"
-    if (-not (Test-Path $ProfilesDir)) {
-        throw "Profiles directory not found: $ProfilesDir"
+    if (-not (Test-Path $script:ProfilesDir)) {
+        throw "Profiles directory not found: $script:ProfilesDir"
     }
-    return $ProfilesDir
+
+    return $script:ProfilesDir
 }
 
 function Get-Profile {
@@ -13,13 +14,13 @@ function Get-Profile {
     )
 
     $profilesDir = Get-ProfilePath
-    $profileFile = Join-Path $profilesDir "$Name.json"
+    $profileFile = Join-Path $profilesDir ("{0}.json" -f $Name)
 
     if (-not (Test-Path $profileFile)) {
         throw "Profile '$Name' not found at $profileFile"
     }
 
-    $raw = Get-Content $profileFile -Raw | ConvertFrom-Json
+    $raw = Get-Content -Path $profileFile -Raw | ConvertFrom-Json
     return Resolve-ProfileInheritance -ProfileObj $raw -ProfilesDir $profilesDir
 }
 
@@ -32,90 +33,84 @@ function Resolve-ProfileInheritance {
         [string]$ProfilesDir,
 
         [Parameter()]
-        [System.Collections.Generic.HashSet[string]]$Visited = $null
+        [string[]]$Visited = @()
     )
 
-    if (-not $Visited) {
-        $Visited = [System.Collections.Generic.HashSet[string]]::new()
+    $inherits = @()
+    if ($null -ne $ProfileObj.inherits) {
+        if ($ProfileObj.inherits -is [array]) {
+            $inherits = @($ProfileObj.inherits)
+        } else {
+            $inherits = @([string]$ProfileObj.inherits)
+        }
     }
 
-    $inherits = $ProfileObj.inherits
-    if ($inherits -is [string]) {
-        $inherits = @($inherits)
-    }
-    if (-not $inherits) {
-        $inherits = @()
-    }
-
-    $allTweaks = [System.Collections.Generic.HashSet[string]]::new()
-    $allPreserve = [System.Collections.Generic.HashSet[string]]::new()
+    $allTweaks = @()
+    $allPreserve = @()
 
     foreach ($parentName in $inherits) {
-        if ($Visited.Contains($parentName)) {
-            Write-Warning "Circular inheritance detected for profile '$parentName' — skipping."
+        if (-not $parentName) {
             continue
         }
-        $Visited.Add($parentName) | Out-Null
 
-        $parentFile = Join-Path $ProfilesDir "$parentName.json"
+        if ($Visited -contains $parentName) {
+            Write-Warning "Circular inheritance detected for profile '$parentName' - skipping."
+            continue
+        }
+
+        $parentFile = Join-Path $ProfilesDir ("{0}.json" -f $parentName)
         if (-not (Test-Path $parentFile)) {
-            Write-Warning "Parent profile '$parentName' not found — skipping."
+            Write-Warning "Parent profile '$parentName' not found - skipping."
             continue
         }
 
-        $parentRaw = Get-Content $parentFile -Raw | ConvertFrom-Json
-        $resolved = Resolve-ProfileInheritance -ProfileObj $parentRaw -ProfilesDir $ProfilesDir -Visited $Visited
+        $parentRaw = Get-Content -Path $parentFile -Raw | ConvertFrom-Json
+        $resolved = Resolve-ProfileInheritance -ProfileObj $parentRaw -ProfilesDir $ProfilesDir -Visited ($Visited + $parentName)
 
-        foreach ($id in $resolved.tweaks) {
-            $null = $allTweaks.Add($id)
+        if ($resolved.Tweaks) {
+            $allTweaks += @($resolved.Tweaks)
         }
-        foreach ($id in $resolved.preserve) {
-            $null = $allPreserve.Add($id)
+        if ($resolved.Preserve) {
+            $allPreserve += @($resolved.Preserve)
         }
     }
 
-    # Child overrides parent
     if ($ProfileObj.tweaks) {
-        foreach ($id in $ProfileObj.tweaks) {
-            $null = $allTweaks.Add($id)
-        }
+        $allTweaks += @($ProfileObj.tweaks)
     }
     if ($ProfileObj.preserve) {
-        foreach ($id in $ProfileObj.preserve) {
-            $null = $allPreserve.Add($id)
-        }
+        $allPreserve += @($ProfileObj.preserve)
     }
 
-    # Remove preserved tweaks from active set
-    $activeTweaks = [System.Collections.Generic.List[string]]::new()
-    foreach ($id in $allTweaks) {
-        if (-not $allPreserve.Contains($id)) {
-            $activeTweaks.Add($id)
-        }
-    }
+    $distinctTweaks = @($allTweaks | Where-Object { $_ } | Select-Object -Unique)
+    $distinctPreserve = @($allPreserve | Where-Object { $_ } | Select-Object -Unique)
+    $activeTweaks = @($distinctTweaks | Where-Object { $distinctPreserve -notcontains $_ })
 
     return [PSCustomObject]@{
         Name        = $ProfileObj.name
         Description = $ProfileObj.description
-        Tweaks      = $activeTweaks.ToArray()
-        Distinct    = $allTweaks.Count
-        Preserved   = $allPreserve.Count
+        Tweaks      = $activeTweaks
+        Preserve    = $distinctPreserve
+        Distinct    = $distinctTweaks.Count
+        Preserved   = $distinctPreserve.Count
         Dangerous   = if ($ProfileObj.dangerous) { $true } else { $false }
     }
 }
 
 function Get-AvailableProfiles {
     $profilesDir = Get-ProfilePath
-    $files = Get-ChildItem "$profilesDir/*.json"
+    $files = Get-ChildItem "$profilesDir\*.json"
+
     $result = foreach ($f in $files) {
-        $data = Get-Content $f.FullName -Raw | ConvertFrom-Json
+        $data = Get-Content -Path $f.FullName -Raw | ConvertFrom-Json
         [PSCustomObject]@{
             Name        = $data.name
             Description = $data.description
             Inherits    = if ($data.inherits -is [array]) { $data.inherits -join ', ' } else { $data.inherits }
-            TweakCount  = if ($data.tweaks) { $data.tweaks.Count } else { 0 }
+            TweakCount  = if ($data.tweaks) { @($data.tweaks).Count } else { 0 }
             Dangerous   = if ($data.dangerous) { $true } else { $false }
         }
     }
+
     return $result
 }

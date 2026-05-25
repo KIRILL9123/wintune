@@ -2,6 +2,11 @@ function Invoke-Scanner {
     param()
 
     $timestamp = (Get-Date).ToString('o')
+    $serviceStartModes = @{}
+    $serviceConfig = Get-CimInstance -ClassName Win32_Service -ErrorAction SilentlyContinue
+    foreach ($svcConfig in $serviceConfig) {
+        $serviceStartModes[$svcConfig.Name] = $svcConfig.StartMode
+    }
 
     # Packages
     Write-Progress -Activity "Scanning" -Status "Enumerating UWP packages..." -PercentComplete 10
@@ -24,7 +29,7 @@ function Invoke-Scanner {
         $services += [PSCustomObject]@{
             Name      = $svc.Name
             DisplayName = $svc.DisplayName
-            StartType = $svc.StartType.ToString()
+            StartType = if ($serviceStartModes.ContainsKey($svc.Name)) { $serviceStartModes[$svc.Name] } else { $null }
             Status    = $svc.Status.ToString()
         }
     }
@@ -52,7 +57,7 @@ function Invoke-Scanner {
     # Registry keys (from bloat-database)
     Write-Progress -Activity "Scanning" -Status "Reading registry keys..." -PercentComplete 70
     $registry = @{}
-    $bloatDb = Join-Path (Split-Path $PSScriptRoot -Parent) "data" "bloat-database.json"
+    $bloatDb = Join-Path (Join-Path (Split-Path $PSScriptRoot -Parent) "data") "bloat-database.json"
     if (Test-Path $bloatDb) {
         $db = Get-Content $bloatDb -Raw | ConvertFrom-Json
         foreach ($entry in $db.registry) {

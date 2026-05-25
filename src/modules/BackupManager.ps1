@@ -9,12 +9,13 @@ function Get-BackupPath {
     } elseif ($env:WINTUNE_BACKUP_PATH) {
         $env:WINTUNE_BACKUP_PATH
     } else {
-        Join-Path $env:LOCALAPPDATA "WinTune" "backups"
+        Join-Path (Join-Path $env:LOCALAPPDATA "WinTune") "backups"
     }
 
     if ($SessionTimestamp) {
         return Join-Path $base $SessionTimestamp
     }
+
     return $base
 }
 
@@ -41,12 +42,10 @@ function New-Backup {
         $null = New-Item -Path $backupDir -ItemType Directory -Force
     }
 
-    # Registry backup (.reg)
     $regFile = Join-Path $backupDir "registry-backup.reg"
     $regKeys = $Changes | Where-Object { $_.Type -eq 'registry' } | ForEach-Object { $_.OriginalValue }
-    # Export is done per-key by the tweak function; this file aggregates metadata only
+    # Registry export is still handled by tweak implementations; the manifest stores session metadata.
 
-    # JSON manifest
     $manifest = [PSCustomObject]@{
         Session      = $timestamp
         Profile      = $ProfileName
@@ -67,16 +66,15 @@ function New-Backup {
         }
     }
 
-    $manifestPath = Join-Path $backupDir "manifest.json"
-    $manifest | ConvertTo-Json -Depth 10 | Set-Content $manifestPath -Encoding UTF8
-
-    # Try System Restore Point (non-fatal)
     try {
         Checkpoint-Computer -Description "WinTune backup before $ProfileName" -RestorePointType MODIFY_SETTINGS -ErrorAction Stop
         $manifest.RestorePoint = "WinTune backup before $ProfileName"
     } catch {
-        Write-Warning "System Restore Point unavailable or failed — continuing with registry backup only."
+        Write-Warning "System Restore Point unavailable or failed - continuing with registry backup only."
     }
+
+    $manifestPath = Join-Path $backupDir "manifest.json"
+    $manifest | ConvertTo-Json -Depth 10 | Set-Content $manifestPath -Encoding UTF8
 
     return [PSCustomObject]@{
         Session      = $timestamp
@@ -119,7 +117,7 @@ function Restore-Backup {
                 'registry' {
                     $keyParts = $change.Name -split '\\'
                     $valueName = $keyParts[-1]
-                    $keyPath = $keyParts[0..($keyParts.Length-2)] -join '\\'
+                    $keyPath = $keyParts[0..($keyParts.Length - 2)] -join '\'
                     $psPath = $keyPath -replace '^HKLM\\', 'HKLM:\' -replace '^HKCU\\', 'HKCU:\'
                     if (-not (Test-Path $psPath)) {
                         $null = New-Item -Path $psPath -Force -ErrorAction Stop
@@ -128,13 +126,11 @@ function Restore-Backup {
                 }
                 'service' {
                     $svc = Get-Service -Name $change.Name -ErrorAction SilentlyContinue
-                    if ($svc -and $change.OriginalValue -eq 'Automatic') {
-                        Set-Service -Name $change.Name -StartupType Automatic -ErrorAction Stop
+                    if ($svc -and $change.OriginalValue) {
+                        Set-Service -Name $change.Name -StartupType $change.OriginalValue -ErrorAction Stop
                     }
                 }
                 'package' {
-                    # Packages are reinstalled from store — revert means "we cleared the removal flag"
-                    # This is a best-effort placeholder
                     Write-Warning "Package reinstall not supported yet: $($change.Name)"
                 }
                 'task' {
@@ -148,6 +144,7 @@ function Restore-Backup {
         } catch {
             $result.Error = $_.Exception.Message
         }
+
         $results += $result
     }
 

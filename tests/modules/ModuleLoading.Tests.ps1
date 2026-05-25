@@ -3,6 +3,7 @@ Describe 'Module loading' {
         $moduleRoot = Join-Path $PSScriptRoot "..\..\src\modules"
         $files = Get-ChildItem "$moduleRoot\*.ps1"
         $errors = @()
+
         foreach ($f in $files) {
             try {
                 . $f.FullName
@@ -10,10 +11,14 @@ Describe 'Module loading' {
                 $errors += "$($f.Name): $_"
             }
         }
-        $errors | Should -BeNullOrEmpty
+
+        $errors | Should BeNullOrEmpty
     }
 
     It 'exports all required functions' {
+        $moduleRoot = Join-Path $PSScriptRoot "..\..\src\modules"
+        Get-ChildItem "$moduleRoot\*.ps1" | ForEach-Object { . $_.FullName }
+
         $expected = @(
             'Get-ProfilePath',
             'Get-Profile',
@@ -34,7 +39,7 @@ Describe 'Module loading' {
         )
 
         foreach ($func in $expected) {
-            (Get-Command $func -ErrorAction SilentlyContinue) | Should -Not -BeNullOrEmpty
+            (Get-Command $func -ErrorAction SilentlyContinue) | Should Not BeNullOrEmpty
         }
     }
 }
