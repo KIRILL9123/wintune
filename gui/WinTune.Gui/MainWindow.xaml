@@ -31,16 +31,31 @@
       </ui:NavigationView.PaneHeader>
 
       <ui:NavigationView.MenuItems>
-        <ui:NavigationViewItem Content="Dashboard" Tag="Dashboard"
-                               Icon="Home" IsSelected="True" />
-        <ui:NavigationViewItem Content="Profiles" Tag="Profiles"
-                               Icon="AllApps" />
-        <ui:NavigationViewItem Content="Audit" Tag="Audit"
-                               Icon="Scan" />
-        <ui:NavigationViewItem Content="Apply" Tag="Apply"
-                               Icon="Play" />
-        <ui:NavigationViewItem Content="History" Tag="Revert"
-                               Icon="History" />
+        <ui:NavigationViewItem Content="Dashboard" Tag="Dashboard" IsSelected="True">
+          <ui:NavigationViewItem.Icon>
+            <ui:FontIcon Glyph="&#xE80F;" />
+          </ui:NavigationViewItem.Icon>
+        </ui:NavigationViewItem>
+        <ui:NavigationViewItem Content="Profiles" Tag="Profiles">
+          <ui:NavigationViewItem.Icon>
+            <ui:FontIcon Glyph="&#xE71D;" />
+          </ui:NavigationViewItem.Icon>
+        </ui:NavigationViewItem>
+        <ui:NavigationViewItem Content="Audit" Tag="Audit">
+          <ui:NavigationViewItem.Icon>
+            <ui:FontIcon Glyph="&#xE714;" />
+          </ui:NavigationViewItem.Icon>
+        </ui:NavigationViewItem>
+        <ui:NavigationViewItem Content="Apply" Tag="Apply">
+          <ui:NavigationViewItem.Icon>
+            <ui:FontIcon Glyph="&#xE768;" />
+          </ui:NavigationViewItem.Icon>
+        </ui:NavigationViewItem>
+        <ui:NavigationViewItem Content="History" Tag="Revert">
+          <ui:NavigationViewItem.Icon>
+            <ui:FontIcon Glyph="&#xE81C;" />
+          </ui:NavigationViewItem.Icon>
+        </ui:NavigationViewItem>
       </ui:NavigationView.MenuItems>
 
       <ui:NavigationView.Content>
