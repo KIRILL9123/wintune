@@ -135,19 +135,22 @@
         <TextBlock Text="Quick Actions" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,12" />
         <StackPanel Orientation="Horizontal">
           <Button Width="130" Height="38" Margin="0,0,12,0"
-                  Style="{ui:ThemeResource AccentButtonStyle}">
+                  Style="{ui:ThemeResource AccentButtonStyle}"
+                  Click="OnAuditClick">
             <StackPanel Orientation="Horizontal">
               <TextBlock Text="&#xE714;" FontFamily="Segoe MDL2 Assets" Margin="0,0,8,0" />
               <TextBlock Text="Audit" />
             </StackPanel>
           </Button>
-          <Button Width="130" Height="38" Margin="0,0,12,0">
+          <Button Width="130" Height="38" Margin="0,0,12,0"
+                  Click="OnApplyClick">
             <StackPanel Orientation="Horizontal">
               <TextBlock Text="&#xE768;" FontFamily="Segoe MDL2 Assets" Margin="0,0,8,0" />
               <TextBlock Text="Apply" />
             </StackPanel>
           </Button>
-          <Button Width="130" Height="38">
+          <Button Width="130" Height="38"
+                  Click="OnRevertClick">
             <StackPanel Orientation="Horizontal">
               <TextBlock Text="&#xE81C;" FontFamily="Segoe MDL2 Assets" Margin="0,0,8,0" />
               <TextBlock Text="Revert" />

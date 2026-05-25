@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Windows;
 using ModernWpf.Controls;
 
@@ -5,8 +6,11 @@ namespace WinTune.Gui;
 
 public partial class MainWindow : Window
 {
+    public static MainWindow? Instance { get; private set; }
+
     public MainWindow()
     {
+        Instance = this;
         InitializeComponent();
         Loaded += OnLoaded;
     }
@@ -21,6 +25,16 @@ public partial class MainWindow : Window
             }
         };
         ShowView("Dashboard");
+    }
+
+    public void NavigateTo(string tag)
+    {
+        var item = Nav.MenuItems
+            .OfType<NavigationViewItem>()
+            .FirstOrDefault(i => i.Tag?.ToString() == tag);
+        if (item != null)
+            Nav.SelectedItem = item;
+        ShowView(tag);
     }
 
     private void ShowView(string? tag)

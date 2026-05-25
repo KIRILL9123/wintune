@@ -78,6 +78,9 @@
                     <Run Text="{Binding TweakCount}" FontWeight="SemiBold" />
                     <Run Text=" tweaks" />
                   </TextBlock>
+                  <Button Content="Select" Width="80" Height="28"
+                          Margin="12,0,0,0" VerticalAlignment="Center"
+                          Click="OnSelectProfileClick" Tag="{Binding Name}" />
                 </StackPanel>
               </Grid>
             </Border>

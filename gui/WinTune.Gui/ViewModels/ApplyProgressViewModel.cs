@@ -22,7 +22,7 @@ public sealed class ApplyProgressViewModel : ViewModelBase
 
     public ObservableCollection<ApplyRow> Rows { get; } = new();
 
-    public async System.Threading.Tasks.Task StartApplyAsync(string profileName)
+    public Task StartApplyAsync(string profileName)
     {
         _profileName = profileName;
         IsLoading = true;
@@ -36,6 +36,7 @@ public sealed class ApplyProgressViewModel : ViewModelBase
         OverallPercent = 100;
         RaisePropertyChanged(nameof(StatusText));
         RaisePropertyChanged(nameof(IsComplete));
+        return Task.CompletedTask;
     }
 }
 

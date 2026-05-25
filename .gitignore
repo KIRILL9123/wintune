@@ -28,3 +28,4 @@ desktop.ini
 *.ps1xml
 *.psd1
 *.psm1  # We use dot-source, not modules
+publish/

@@ -1,3 +1,4 @@
+using System.Windows;
 using System.Windows.Controls;
 using WinTune.Gui.ViewModels;
 
@@ -15,9 +16,24 @@ public partial class DashboardView : UserControl
         };
     }
 
-    private async void OnRefreshClick(object sender, System.Windows.RoutedEventArgs e)
+    private async void OnRefreshClick(object sender, RoutedEventArgs e)
     {
         var vm = (DashboardViewModel)DataContext;
         await vm.LoadAsync();
+    }
+
+    private void OnAuditClick(object sender, RoutedEventArgs e)
+    {
+        MainWindow.Instance?.NavigateTo("Audit");
+    }
+
+    private void OnApplyClick(object sender, RoutedEventArgs e)
+    {
+        MainWindow.Instance?.NavigateTo("Apply");
+    }
+
+    private void OnRevertClick(object sender, RoutedEventArgs e)
+    {
+        MainWindow.Instance?.NavigateTo("Revert");
     }
 }
