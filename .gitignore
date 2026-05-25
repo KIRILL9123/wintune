@@ -2,6 +2,8 @@
 
 # Logs
 logs/
+!logs/
+!logs/.gitkeep
 *.log
 
 # Backups (stored in $env:LOCALAPPDATA\WinTune\backups\ by default)
