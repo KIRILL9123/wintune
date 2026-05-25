@@ -73,7 +73,7 @@
 - [x] Add 5-minute timeout with proc.Kill fallback in PsRunner.
 - [x] Replaced `PowerShell.Create()` with `Process.Start("powershell.exe")` for correct external process invocation.
 - [x] Removed Microsoft.PowerShell.SDK package dependency (saves ~150MB).
-- [ ] Define GUI-level smoke tests (launch + List + OutputJson parsing).
+- [x] Define GUI-level smoke tests (launch + List + OutputJson parsing).
 
 **DoD**
 - GUI builds via `dotnet build` and runs via `dotnet run --project gui/WinTune.Gui`.
@@ -83,8 +83,8 @@
 
 ## Phase 6: Release Readiness (v0.1)
 - [x] CI on `windows-latest`: Pester (20 suites, 60+ tests) + schema checks + CLI smoke checks.
-- [ ] Publish operator runbook: guarantees, limitations, dangerous-policy.
-- [ ] Tag and publish `v0.1.0` only on fully green CI.
+- [x] Publish operator runbook: guarantees, limitations, dangerous-policy.
+- [x] Tag and publish `v0.1.0` only on fully green CI.
 
 **DoD**
 - Full CI is green.
