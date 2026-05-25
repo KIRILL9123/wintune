@@ -45,44 +45,66 @@ function Get-Score {
         if (-not $id) { continue }
         $detected = $false
         $entry = $null
+        $found = $false
 
         if ($dbPackages.ContainsKey($id)) {
             $entry = $dbPackages[$id]
-        } elseif ($dbServices.ContainsKey($id)) {
+            if ($windowsBuild -gt 0 -and
+                (($entry.buildMin -gt 0 -and $windowsBuild -lt $entry.buildMin) -or
+                 ($entry.buildMax -gt 0 -and $windowsBuild -gt $entry.buildMax))) {
+                continue
+            }
+            $found = $true
+            $total++
+            $detected = @($snapshotPackages | Where-Object { $_.Name -like $entry.name }).Count -gt 0
+        }
+
+        if (-not $found -and $dbServices.ContainsKey($id)) {
             $entry = $dbServices[$id]
-        } elseif ($dbTasks.ContainsKey($id)) {
+            if ($windowsBuild -gt 0 -and
+                (($entry.buildMin -gt 0 -and $windowsBuild -lt $entry.buildMin) -or
+                 ($entry.buildMax -gt 0 -and $windowsBuild -gt $entry.buildMax))) {
+                continue
+            }
+            $found = $true
+            $total++
+            $detected = @($snapshotServices | Where-Object { $_.Name -eq $entry.name }).Count -gt 0
+        }
+
+        if (-not $found -and $dbTasks.ContainsKey($id)) {
             $entry = $dbTasks[$id]
-        } elseif ($dbRegistry.ContainsKey($id)) {
+            if ($windowsBuild -gt 0 -and
+                (($entry.buildMin -gt 0 -and $windowsBuild -lt $entry.buildMin) -or
+                 ($entry.buildMax -gt 0 -and $windowsBuild -gt $entry.buildMax))) {
+                continue
+            }
+            $found = $true
+            $total++
+            $detected = @($snapshotTasks | Where-Object { "$($_.TaskPath)$($_.TaskName)" -like "*$($entry.name)*" }).Count -gt 0
+        }
+
+        if (-not $found -and $dbRegistry.ContainsKey($id)) {
             $entry = $dbRegistry[$id]
-        } elseif ($dbCommands.ContainsKey($id)) {
+            if ($windowsBuild -gt 0 -and
+                (($entry.buildMin -gt 0 -and $windowsBuild -lt $entry.buildMin) -or
+                 ($entry.buildMax -gt 0 -and $windowsBuild -gt $entry.buildMax))) {
+                continue
+            }
+            $found = $true
+            $total++
+            $detected = $null -ne $snapshotRegistry.$id
+        }
+
+        if (-not $found -and $dbCommands.ContainsKey($id)) {
             $entry = $dbCommands[$id]
-        }
-
-        if (-not $entry) { continue }
-
-        if (($entry.buildMin -gt 0 -and $windowsBuild -lt $entry.buildMin) -or
-            ($entry.buildMax -gt 0 -and $windowsBuild -gt $entry.buildMax)) {
-            continue
-        }
-
-        $total++
-
-        switch ($entry.type) {
-            'package' {
-                $detected = @($snapshotPackages | Where-Object { $_.Name -like $entry.name }).Count -gt 0
+            if ($windowsBuild -gt 0 -and
+                (($entry.buildMin -gt 0 -and $windowsBuild -lt $entry.buildMin) -or
+                 ($entry.buildMax -gt 0 -and $windowsBuild -gt $entry.buildMax))) {
+                continue
             }
-            'service' {
-                $detected = @($snapshotServices | Where-Object { $_.Name -eq $entry.name }).Count -gt 0
-            }
-            'task' {
-                $detected = @($snapshotTasks | Where-Object { "$($_.TaskPath)$($_.TaskName)" -like "*$($entry.name)*" }).Count -gt 0
-            }
-            'registry' {
-                $detected = $null -ne $snapshotRegistry.$id
-            }
-            'command' {
-                $detected = Test-CommandDetected -TweakId $id
-            }
+            $found = $true
+            $total++
+            $detected = Test-CommandDetected -TweakId $id
         }
 
         if ($detected) { $present++ }
