@@ -261,7 +261,14 @@ function Restore-Backup {
                     throw "Package reinstall not supported yet: $($change.Name)"
                 }
                 'command' {
-                    throw "Command revert not supported yet: $($change.Name)"
+                    $commandUndo = @{
+                        'disable-hibernation' = 'powercfg /h on *>$null'
+                    }
+                    if ($commandUndo.ContainsKey($change.TweakId)) {
+                        Invoke-Expression $commandUndo[$change.TweakId]
+                    } else {
+                        throw "Command revert not supported: $($change.TweakId)"
+                    }
                 }
                 'task' {
                     $task = Get-ScheduledTask -TaskName $change.Name -ErrorAction SilentlyContinue
