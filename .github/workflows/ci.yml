@@ -38,3 +38,13 @@ jobs:
         run: |
           $json = .\src\wintune.ps1 -Action List -OutputJson
           $null = $json | ConvertFrom-Json
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Build and test GUI
+        shell: pwsh
+        run: |
+          dotnet test gui/WinTune.Gui.Tests/WinTune.Gui.Tests.csproj --verbosity normal
