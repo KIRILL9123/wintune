@@ -99,6 +99,22 @@
       "detect": "Get-Service -Name WSearch -ErrorAction SilentlyContinue",
       "buildMin": 22000,
       "buildMax": 0
+    },
+    {
+      "id": "disable-wpnservice",
+      "type": "service",
+      "name": "WpnService",
+      "detect": "Get-Service -Name WpnService -ErrorAction SilentlyContinue",
+      "buildMin": 22000,
+      "buildMax": 0
+    },
+    {
+      "id": "disable-dps",
+      "type": "service",
+      "name": "DPS",
+      "detect": "Get-Service -Name DPS -ErrorAction SilentlyContinue",
+      "buildMin": 22000,
+      "buildMax": 0
     }
   ],
   "tasks": [
