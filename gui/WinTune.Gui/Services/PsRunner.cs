@@ -49,11 +49,11 @@ public sealed class PsRunner
         using var cts = new CancellationTokenSource(Timeout);
         using var proc = Process.Start(psi)!;
 
+        var stdoutTask = proc.StandardOutput.ReadToEndAsync();
+        var stderrTask = proc.StandardError.ReadToEndAsync();
+
         try
         {
-            var stdoutTask = proc.StandardOutput.ReadToEndAsync();
-            var stderrTask = proc.StandardError.ReadToEndAsync();
-
             await proc.WaitForExitAsync(cts.Token);
 
             var stdout = await stdoutTask;
@@ -73,7 +73,7 @@ public sealed class PsRunner
                 proc.Kill(entireProcessTree: true);
             }
 
-            var partial = proc.ExitCode == 0 ? "" : proc.StandardOutput.ReadToEnd();
+            var partial = await stdoutTask;
             return new PsResult(-1, partial ?? "", "Process timed out and was killed.");
         }
     }
