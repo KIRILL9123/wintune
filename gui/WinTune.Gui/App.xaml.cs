@@ -1,12 +1,15 @@
+using System;
 using System.IO;
-using System.Windows;
-using ModernWpf;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 
 namespace WinTune.Gui;
 
 public partial class App : Application
 {
     public static string RepoRoot { get; } = FindRepoRoot();
+
+    private Window? _window;
 
     private static string FindRepoRoot()
     {
@@ -20,9 +23,9 @@ public partial class App : Application
         throw new DirectoryNotFoundException("Cannot find repo root (src/wintune.ps1)");
     }
 
-    protected override void OnStartup(StartupEventArgs e)
+    protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
     {
-        base.OnStartup(e);
-        ThemeManager.Current.ApplicationTheme = ApplicationTheme.Dark;
+        _window = new MainWindow();
+        _window.Activate();
     }
 }

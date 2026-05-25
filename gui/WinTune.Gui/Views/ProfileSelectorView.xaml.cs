@@ -1,5 +1,4 @@
-using System.Windows;
-using System.Windows.Controls;
+using Microsoft.UI.Xaml.Controls;
 using WinTune.Gui.ViewModels;
 
 namespace WinTune.Gui.Views;
@@ -14,10 +13,5 @@ public partial class ProfileSelectorView : UserControl
             var vm = (ProfileSelectorViewModel)DataContext;
             await vm.LoadAsync();
         };
-    }
-
-    private void OnSelectProfileClick(object sender, RoutedEventArgs e)
-    {
-        MainWindow.Instance?.NavigateTo("Audit");
     }
 }

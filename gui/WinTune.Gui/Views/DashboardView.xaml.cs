@@ -1,5 +1,5 @@
-using System.Windows;
-using System.Windows.Controls;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using WinTune.Gui.ViewModels;
 
 namespace WinTune.Gui.Views;
@@ -14,26 +14,8 @@ public partial class DashboardView : UserControl
             var vm = (DashboardViewModel)DataContext;
             await vm.LoadAsync();
         };
-    }
-
-    private async void OnRefreshClick(object sender, RoutedEventArgs e)
-    {
-        var vm = (DashboardViewModel)DataContext;
-        await vm.LoadAsync();
-    }
-
-    private void OnAuditClick(object sender, RoutedEventArgs e)
-    {
-        MainWindow.Instance?.NavigateTo("Audit");
-    }
-
-    private void OnApplyClick(object sender, RoutedEventArgs e)
-    {
-        MainWindow.Instance?.NavigateTo("Apply");
-    }
-
-    private void OnRevertClick(object sender, RoutedEventArgs e)
-    {
-        MainWindow.Instance?.NavigateTo("Revert");
+        AuditBtn.Click += (_, _) => MainWindow.Instance?.NavigateTo("Audit");
+        ApplyBtn.Click += (_, _) => MainWindow.Instance?.NavigateTo("Apply");
+        RevertBtn.Click += (_, _) => MainWindow.Instance?.NavigateTo("Revert");
     }
 }
