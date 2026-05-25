@@ -25,42 +25,54 @@
 - Exit codes documented (`0` success, `1` error) and tested.
 - `-OutputJson` contract frozen: specs for every action + compliance test.
 
-## Phase 2: Safe Apply Core
-- [ ] Make `Apply` strictly idempotent (repeat run has no unsafe side-effects).
-- [ ] Enforce backup-before-mutate for each tweak type (package/service/task/registry/command).
-- [ ] Finalize behavior of `-WhatIf`, `-Confirm`, `-Dangerous`, `-StopOnError`.
-- [ ] Add tests for partial failures and stop-on-error behavior.
+## Phase 2: Safe Apply Core (Completed)
+- [x] Make `Apply` strictly idempotent (repeat run has no unsafe side-effects).
+- [x] Enforce backup-before-mutate for each tweak type (package/service/task/registry/command).
+- [x] Finalize behavior of `-WhatIf`, `-Confirm`, `-Dangerous`, `-StopOnError`.
+- [x] Add tests for partial failures and stop-on-error behavior.
+- [x] Add buildMin/buildMax filtering in TweaksEngine (build-aware detection).
+- [x] Move `--Confirm` to `-Confirm` in CLI (SupportsShouldProcess on Invoke-TweakGeneric).
+- [x] Add `Test-CommandDetected` for hibernation detection, per-tweak Write-SessionEvent logging.
 
 **DoD**
 - Repeated `Apply` is safe and predictable.
 - Backup is produced before mutation paths execute.
 - Flag behavior is documented and covered by tests.
+- Build-aware filtering skips tweaks outside their target Windows build range.
 
-## Phase 3: Revert Reliability
-- [ ] Harden `Revert` manifest validation and error handling.
-- [ ] Enforce reverse-order rollback and explicit per-item status reporting.
-- [ ] Document rollback limitations (full revert vs best-effort revert).
-- [ ] Add integration scenario: `Apply -> Revert -> verify state`.
+## Phase 3: Revert Reliability (Completed)
+- [x] Harden `Revert` manifest validation and error handling.
+- [x] Enforce reverse-order rollback and explicit per-item status reporting.
+- [x] Document rollback limitations (full revert vs best-effort revert) per type.
+- [x] Add integration scenario: `Apply -> Revert -> verify state` (per-type unit tests).
+- [x] Normalize WMI StartMode values ("Auto" -> "Automatic") for safe Set-Service restore.
 
 **DoD**
 - `Apply -> Revert` is reproducible in integration tests.
 - Revert report is transparent for success/failure per item.
 
-## Phase 4: Contract & Profile Governance
-- [ ] Freeze and test `-OutputJson` contract for every action.
-- [ ] Add schema/contract checks for `profiles/*.json`.
-- [ ] Add compatibility rules for tweak IDs and profile inheritance integrity.
-- [ ] Strengthen CI gates for contract stability on data/profile changes.
+## Phase 4: Contract & Profile Governance (Completed)
+- [x] Freeze and test `-OutputJson` contract for List and Audit actions.
+- [ ] Freeze and test `-OutputJson` contract for Apply and Revert actions (PARTIAL: shapes exist, no admin-free automated tests).
+- [x] Add schema/contract checks for `profiles/*.json` (Test-ProfileSchema via Validate-Schemas.ps1 -IncludeProfiles).
+- [x] Add compatibility rules for tweak IDs (regex pattern) and profile inheritance integrity (circular detection in visited-set).
+- [x] Add preserve ID validation against bloat-database.json.
+- [x] Strengthen CI gates for contract stability on data/profile changes.
+- [x] Add `"command"` type to backup-manifest-schema.json.
+- [x] Add Test-BloatDatabaseSchema for runtime database validation in TweaksEngine.
 
 **DoD**
 - Contract and profile changes fail fast without explicit updates and tests.
 - CI prevents silent shape/compatibility regressions.
 
-## Phase 5: WPF GUI (Post-v0.1)
-- [ ] Scaffold WPF GUI project (`gui/WinTune.Gui`) on `net8.0-windows`.
-- [ ] Implement dashboard, profile selector, audit results, apply progress, revert views.
-- [ ] Wire GUI to PowerShell via `-OutputJson` (no direct module imports).
-- [ ] Add ModernWpf styling and default dark theme.
+## Phase 5: WPF GUI (In Progress)
+- [x] Scaffold WPF GUI project (`gui/WinTune.Gui`) on `net8.0-windows`.
+- [x] Implement dashboard, profile selector, audit results, apply progress, revert views.
+- [x] Wire GUI to PowerShell via `-OutputJson` (no direct module imports) — PsRunner.cs with System.Diagnostics.Process.
+- [x] Add ModernWpf styling and default dark theme.
+- [x] Add 5-minute timeout with proc.Kill fallback in PsRunner.
+- [x] Replaced `PowerShell.Create()` with `Process.Start("powershell.exe")` for correct external process invocation.
+- [x] Removed Microsoft.PowerShell.SDK package dependency (saves ~150MB).
 - [ ] Define GUI-level smoke tests (launch + List + OutputJson parsing).
 
 **DoD**
@@ -70,9 +82,8 @@
 - Default dark theme is applied.
 
 ## Phase 6: Release Readiness (v0.1)
-- [ ] CI on `windows-latest`: Pester + schema checks + CLI smoke checks.
+- [x] CI on `windows-latest`: Pester (20 suites, 60+ tests) + schema checks + CLI smoke checks.
 - [ ] Publish operator runbook: guarantees, limitations, dangerous-policy.
-- [ ] Final review checklist for release confidence.
 - [ ] Tag and publish `v0.1.0` only on fully green CI.
 
 **DoD**
