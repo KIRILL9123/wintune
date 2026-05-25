@@ -1,19 +1,25 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+
+[assembly: InternalsVisibleTo("WinTune.Gui.Tests")]
 
 namespace WinTune.Gui.Services;
 
 public sealed class PsRunner
 {
     private readonly string _repoRoot;
-    private static readonly TimeSpan Timeout = TimeSpan.FromMinutes(5);
+    private readonly TimeSpan _timeout;
 
-    public PsRunner(string repoRoot)
+    public PsRunner(string repoRoot) : this(repoRoot, TimeSpan.FromMinutes(5)) { }
+
+    internal PsRunner(string repoRoot, TimeSpan timeout)
     {
         _repoRoot = repoRoot;
+        _timeout = timeout;
     }
 
     public async Task<PsResult> RunAsync(string action, string? profile = null, string? session = null, bool outputJson = true)
@@ -46,7 +52,7 @@ public sealed class PsRunner
             CreateNoWindow = true
         };
 
-        using var cts = new CancellationTokenSource(Timeout);
+        using var cts = new CancellationTokenSource(_timeout);
         using var proc = Process.Start(psi)!;
 
         var stdoutTask = proc.StandardOutput.ReadToEndAsync();
