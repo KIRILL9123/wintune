@@ -17,11 +17,14 @@
     <DataGrid Grid.Row="1" ItemsSource="{Binding Sessions}" AutoGenerateColumns="False" Margin="0,24,0,0">
       <DataGrid.Columns>
         <DataGridTextColumn Header="Session" Binding="{Binding SessionId}" Width="2*" />
-        <DataGridTextColumn Header="Timestamp" Binding="{Binding Timestamp}" Width="2*" />
-        <DataGridTemplateColumn Header="Action" Width="*">
+        <DataGridTextColumn Header="Profile" Binding="{Binding ProfileName}" Width="*" />
+        <DataGridTextColumn Header="Changes" Binding="{Binding ChangeCount}" Width="80" />
+        <DataGridTextColumn Header="Succeeded" Binding="{Binding SuccessCount}" Width="80" />
+        <DataGridTextColumn Header="Timestamp" Binding="{Binding Timestamp, StringFormat='{}{0:g}'}" Width="2*" />
+        <DataGridTemplateColumn Header="Action" Width="100">
           <DataGridTemplateColumn.CellTemplate>
             <DataTemplate>
-              <Button Content="Revert" Width="90" />
+              <Button Content="Revert" Width="80" />
             </DataTemplate>
           </DataGridTemplateColumn.CellTemplate>
         </DataGridTemplateColumn>

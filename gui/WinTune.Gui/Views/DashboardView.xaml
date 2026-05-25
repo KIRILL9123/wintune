@@ -26,6 +26,9 @@
           <TextBlock Text="Debloat Score" FontSize="16" Foreground="#8B949E" />
           <TextBlock Text="{Binding DebloatScore}" FontSize="64" FontWeight="Bold" Margin="0,12,0,0" />
           <TextBlock Text="%" FontSize="20" Margin="0,-18,0,0" Foreground="#8B949E" />
+          <TextBlock Text="{Binding LastScanText}" Margin="0,16,0,0" Foreground="#8B949E" FontSize="12" />
+          <TextBlock Text="{Binding Error}" Margin="0,4,0,0" Foreground="#EA3943" FontSize="12" />
+          <modern:ProgressRing IsActive="{Binding IsLoading}" Width="24" Height="24" Margin="0,8,0,0" />
         </StackPanel>
       </Border>
 

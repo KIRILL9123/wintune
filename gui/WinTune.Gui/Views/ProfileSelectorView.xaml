@@ -22,13 +22,18 @@
       </ItemsControl.ItemsPanel>
       <ItemsControl.ItemTemplate>
         <DataTemplate>
-          <Border Width="260" Height="140" Margin="0,0,16,16" Padding="16" Background="#121826" CornerRadius="12">
-            <StackPanel>
-              <TextBlock Text="{Binding Name}" FontSize="18" FontWeight="SemiBold" />
-              <TextBlock Text="{Binding Description}" Margin="0,8,0,0" Foreground="#8B949E" TextWrapping="Wrap" />
-              <Button Content="Select" Width="90" Margin="0,12,0,0" />
-            </StackPanel>
-          </Border>
+              <Border Width="260" Height="160" Margin="0,0,16,16" Padding="16" Background="#121826" CornerRadius="12">
+                <StackPanel>
+                  <TextBlock Text="{Binding Name}" FontSize="18" FontWeight="SemiBold" />
+                  <TextBlock Text="{Binding Description}" Margin="0,8,0,0" Foreground="#8B949E" TextWrapping="Wrap" />
+                  <TextBlock Margin="0,8,0,0" Foreground="#8B949E" FontSize="12">
+                    <Run Text="{Binding TweakCount, StringFormat='{}{0} tweaks'}" />
+                    <Run Text=" / " />
+                    <Run Text="{Binding Dangerous, StringFormat='Dangerous: {0}'}" />
+                  </TextBlock>
+                  <Button Content="Select" Width="90" Margin="0,8,0,0" />
+                </StackPanel>
+              </Border>
         </DataTemplate>
       </ItemsControl.ItemTemplate>
     </ItemsControl>
