@@ -1,8 +1,7 @@
 # WinTune — .gitignore
 
 # Logs
-logs/
-!logs/
+logs/*
 !logs/.gitkeep
 *.log
 

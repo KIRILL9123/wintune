@@ -1,71 +1,70 @@
-# Roadmap — WinTune
+# Roadmap - WinTune
 
-## Phase 0: Foundation (Week 1)
-- [x] Create GitHub repo with README + LICENSE.
-- [x] Set up folder skeleton (`src/`, `tests/`, `docs/`, `gui/`, `logs/`).
-- [x] Write `wintune.ps1` entry point with dot-source module loading scaffold.
-- [x] Add pre-flight checks:
-  - Admin rights elevation check (fail early with clear message).
-  - Execution Policy check (warn on `Restricted`/`AllSigned`).
-  - Windows build detection (`[Environment]::OSVersion.Version.Build`).
-- [x] Build `Scanner.ps1` MVP: enumerate UWP packages, services, scheduled tasks.
-- [x] Build `data/bloat-database.json` with initial entry schema (AppX IDs, service names, task paths, registry keys).
-- [x] Build `profiles/base.json` — common debloat base profile.
-- [x] Build all 4 reference profiles (`gaming.json`, `workstation.json`, `laptop.json`, `minimal.json` with `"inherits"` chain)
-- [x] Define the tweak function contract (metadata block, `-WhatIf`/`-Confirm` params, return object).
-- [x] Build `Profiles.ps1` — load + resolve `inherits` chain (breadth-first, child overrides parent).
-- [x] Build `TweaksEngine.ps1` — compare snapshot vs profile, iterate tweaks, dispatch to tweak functions.
-- [x] Build `BackupManager.ps1` MVP — registry export to `.reg` + JSON manifest (SRP non-fatal).
-- [x] Build `Reporter.ps1` — console tables, HTML export, score calculation.
-- [x] Write 10 reference tweaks: `remove-bing-news`, `remove-bing-weather`, `remove-candy-crush`, `remove-copilot`, `remove-teams`, `disable-telemetry`, `disable-dmwappush`, `disable-ads-id`, `disable-consent-appraiser`, `disable-ceip-task`
-- [x] Set up Pester test scaffolding.
-- [x] Write tests for: module loading, profile inheritance resolution, score calculation.
+## Phase 0: Foundation (Completed)
+- [x] Repository bootstrap (`README`, `LICENSE`, skeleton folders).
+- [x] CLI entry point (`src/wintune.ps1`) with module dot-sourcing.
+- [x] Pre-flight checks (admin, execution policy warning, Windows build detection).
+- [x] Core modules scaffolded and wired (`Scanner`, `Profiles`, `TweaksEngine`, `BackupManager`, `Reporter`).
+- [x] Initial `bloat-database.json` and profile set (`base`, `gaming`, `workstation`, `laptop`, `minimal`).
+- [x] Initial tweak set (10 reference tweaks).
+- [x] Pester scaffolding and baseline tests.
 
-## Phase 1: Audit Engine (Week 2)
-- [ ] Implement profile-to-snapshot comparison logic.
-- [ ] Implement Debloat Completion Rate calculation.
-- [ ] Build `Reporter.ps1` (console tables).
-- [ ] Add logging scaffold (Session / Audit / Error log levels).
-- [ ] Add `Audit` CLI entry: `wintune.ps1 -Action Audit -Profile Minimal`.
-- [ ] Write first 10 tweak definitions (privacy + debloat).
-- [ ] Write Pester tests for Scanner, Reporter, and each tweak.
+## Phase 1: Audit Baseline + Data Gate
+- [ ] Freeze `Audit` contract: CLI inputs, JSON output shape, and exit-code behavior.
+- [ ] Stabilize `Scanner` and `Reporter` for edge cases (empty collections, missing items, null snapshots).
+- [ ] Add minimal logging scaffold (`session`, `audit`, `error` files and directory convention).
+- [ ] Add minimal schema gate for `src/data/bloat-database.json` (local validation + CI validation).
+- [ ] Add CI smoke checks for CLI read-only paths (`List` and `List -OutputJson`).
+- [ ] Add/extend unit tests for Scanner/Reporter contract safety.
 
-## Phase 2: Safe Apply (Week 3)
-- [ ] Complete `BackupManager.ps1` — add SRP as non-fatal secondary backup.
-- [ ] Implement idempotent apply logic (skip already-applied tweaks).
-- [ ] Implement `Apply` CLI entry with `-WhatIf` preview and `-Confirm` per-item prompting.
-- [ ] Add granular toggles: user can uncheck specific items before confirming.
-- [ ] Wire `-Dangerous` flag for security-sensitive tweaks.
-- [ ] Write 20 more tweak definitions (performance + UI).
-- [ ] Write Pester tests for TweaksEngine + BackupManager.
+**DoD**
+- `Audit` is deterministic for same snapshot/profile inputs.
+- `bloat-database.json` passes schema validation in local check and CI.
+- Pester unit tests and CLI smoke checks are green in CI.
 
-## Phase 3: Profiles & Scoring (Week 4)
-- [ ] Finalize 4 default profiles: `Gaming`, `Workstation`, `Laptop`, `Minimal`.
-- [ ] Add informational delta metrics (RAM, boot time, process count).
-- [ ] HTML report export via `Reporter.ps1`.
-- [ ] Revert command: `wintune.ps1 -Action Revert -Session <timestamp>`.
-- [ ] Write integration tests (mock-based).
+## Phase 2: Safe Apply Core
+- [ ] Make `Apply` strictly idempotent (repeat run has no unsafe side-effects).
+- [ ] Enforce backup-before-mutate for each tweak type (package/service/task/registry/command).
+- [ ] Finalize behavior of `-WhatIf`, `-Confirm`, `-Dangerous`, `-StopOnError`.
+- [ ] Add tests for partial failures and stop-on-error behavior.
 
-## Phase 4: Polish & Release v0.1 (Week 5)
-- [ ] PowerShell error handling and structured logging throughout.
-- [ ] Documentation: usage GIFs, tweak contribution guide.
-- [ ] CI: GitHub Action that runs Pester tests on `windows-latest`.
-- [ ] Tag `v0.1.0`.
+**DoD**
+- Repeated `Apply` is safe and predictable.
+- Backup is produced before mutation paths execute.
+- Flag behavior is documented and covered by tests.
 
-## Phase 5: PySide6 GUI Application (Post-v0.1)
-- [ ] Build PySide6 GUI in `gui/` with 6 screens:
-  - Dashboard (profile selector + action buttons).
-  - Audit Report (Debloat Completion Rate + per-tweak checkboxes).
-  - Apply Progress (live progress bar with per-tweak status).
-  - Revert (session history browser + revert confirmation).
-  - Settings (backup path, output path, dangerous mode).
-  - Report Viewer (inline HTML report or browser launch).
-- [ ] Implement `-OutputJson` flag in engine for machine-readable GUI consumption.
-- [ ] Dark theme throughout (Windows 11 dark palette).
-- [ ] App icon (generated separately, stored in `gui/assets/`).
-- [ ] System tray mini-audit reminder (optional, low priority).
+## Phase 3: Revert Reliability
+- [ ] Harden `Revert` manifest validation and error handling.
+- [ ] Enforce reverse-order rollback and explicit per-item status reporting.
+- [ ] Document rollback limitations (full revert vs best-effort revert).
+- [ ] Add integration scenario: `Apply -> Revert -> verify state`.
 
-## Phase 6: Community expansion
-- [ ] Crowd-sourced bloat-database.json via PRs.
-- [ ] Plugin system for custom user profiles.
-- [ ] Localization (ru, de, en).
+**DoD**
+- `Apply -> Revert` is reproducible in integration tests.
+- Revert report is transparent for success/failure per item.
+
+## Phase 4: Contract & Profile Governance
+- [ ] Freeze and test `-OutputJson` contract for every action.
+- [ ] Add schema/contract checks for `profiles/*.json`.
+- [ ] Add compatibility rules for tweak IDs and profile inheritance integrity.
+- [ ] Strengthen CI gates for contract stability on data/profile changes.
+
+**DoD**
+- Contract and profile changes fail fast without explicit updates and tests.
+- CI prevents silent shape/compatibility regressions.
+
+## Phase 5: Release Readiness (v0.1)
+- [ ] CI on `windows-latest`: Pester + schema checks + CLI smoke checks.
+- [ ] Publish operator runbook: guarantees, limitations, dangerous-policy.
+- [ ] Final review checklist for release confidence.
+- [ ] Tag and publish `v0.1.0` only on fully green CI.
+
+**DoD**
+- Full CI is green.
+- Runbook is complete and aligned with actual behavior.
+- Release tag `v0.1.0` is created from validated state.
+
+## Phase 6: GUI and Community Expansion (Post-v0.1)
+- [ ] PySide6 GUI implementation in `gui/` using `-OutputJson` contract.
+- [ ] Plugin/community extensions for bloat database and custom profiles.
+- [ ] Localization (`ru`, `de`, `en`).

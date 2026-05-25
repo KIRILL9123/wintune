@@ -6,6 +6,8 @@
 .\src\wintune.ps1
 ```
 
+Contract status: **frozen for v0.1**. Changes to parameter semantics, JSON output fields, or exit-code behavior require contract test updates.
+
 ## Parameters
 
 | Parameter | Type | Required | Description |
@@ -83,6 +85,8 @@
 | 1 | Fatal error (no admin rights, bad profile, parse error) |
 | 2 | Partial success (some tweaks failed, `-StopOnError` not set) |
 
+Note: current implementation may still return `0/1` in some partial-failure paths. Exit code `2` remains part of frozen contract and must be aligned in implementation before `v0.1`.
+
 ## Environment variables
 
 | Variable | Overrides | Default |
@@ -111,3 +115,11 @@
 # List available profiles
 .\src\wintune.ps1 -Action List
 ```
+
+## JSON output contract (frozen)
+
+Machine-readable output is defined in [output-json-contract.md](C:/Users/kyrylo/Documents/WinTune/docs/output-json-contract.md).
+
+## Backup manifest contract (frozen)
+
+Backup/revert manifest format is defined in [backup-manifest-contract.md](C:/Users/kyrylo/Documents/WinTune/docs/backup-manifest-contract.md).

@@ -1,0 +1,40 @@
+name: ci
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  validate-and-test:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate bloat database schema
+        shell: powershell
+        run: |
+          .\scripts\Validate-Schemas.ps1
+
+      - name: Validate profile references
+        shell: powershell
+        run: |
+          .\scripts\Validate-Schemas.ps1 -IncludeProfiles
+
+      - name: Run Pester tests
+        shell: powershell
+        run: |
+          Invoke-Pester -Path .\tests -EnableExit
+
+      - name: CLI smoke - List
+        shell: powershell
+        run: |
+          .\src\wintune.ps1 -Action List | Out-Null
+
+      - name: CLI smoke - List OutputJson
+        shell: powershell
+        run: |
+          $json = .\src\wintune.ps1 -Action List -OutputJson
+          $null = $json | ConvertFrom-Json

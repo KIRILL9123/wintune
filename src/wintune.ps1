@@ -97,6 +97,8 @@ if ($requiresAdmin -and -not (Test-Admin)) {
 
 $null = Test-ExecutionPolicy
 $script:WindowsBuild = Get-WindowsBuild
+$script:LogSession = Initialize-LogSession -Action $Action
+Write-SessionEvent -SessionFile $script:LogSession.SessionFile -Level "INFO" -Message "Action '$Action' started."
 
 function Get-AuditData {
     param(
@@ -135,6 +137,8 @@ switch ($Action) {
             $profiles | Format-Table -AutoSize
         }
 
+        Write-SessionEvent -SessionFile $script:LogSession.SessionFile -Level "INFO" -Message "List action completed."
+
         exit 0
     }
 
@@ -165,6 +169,8 @@ switch ($Action) {
             $htmlPath = Join-Path $OutputDir "audit-$Profile-$(Get-Date -Format 'yyyyMMdd-HHmmss').html"
             $null = Out-HtmlReport -Score $data.Score -Snapshot $data.Snapshot -Profile $data.Profile -OutputPath $htmlPath
         }
+
+        Write-SessionEvent -SessionFile $script:LogSession.SessionFile -Level "INFO" -Message "Audit action completed."
 
         exit 0
     }
@@ -236,6 +242,8 @@ switch ($Action) {
             $null = Out-HtmlReport -Score $finalScore -Snapshot $finalSnapshot -Profile $data.Profile -Changes $engineResult.Changes -OutputPath $htmlPath
         }
 
+        Write-SessionEvent -SessionFile $script:LogSession.SessionFile -Level "INFO" -Message "Apply action completed."
+
         exit 0
     }
 
@@ -279,6 +287,8 @@ switch ($Action) {
                 }
             }
         }
+
+        Write-SessionEvent -SessionFile $script:LogSession.SessionFile -Level "INFO" -Message "Revert action completed."
 
         exit 0
     }
