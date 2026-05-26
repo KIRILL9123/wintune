@@ -39,12 +39,13 @@ jobs:
           $json = .\src\wintune.ps1 -Action List -OutputJson
           $null = $json | ConvertFrom-Json
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v3
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
         with:
-          dotnet-version: 8.0.x
+          toolchain: stable
 
-      - name: Build and test GUI
-        shell: pwsh
+      - name: Build Tauri GUI
+        shell: bash
         run: |
-          dotnet test gui/WinTune.Gui.Tests/WinTune.Gui.Tests.csproj --verbosity normal
+          cd gui-tauri/src-tauri
+          cargo build

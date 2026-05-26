@@ -8,10 +8,10 @@ logs/*
 # Backups (stored in $env:LOCALAPPDATA\WinTune\backups\ by default)
 backups/
 
-# GUI build outputs
-gui/**/bin/
-gui/**/obj/
-gui/.vs/
+# GUI build outputs (Tauri)
+gui-tauri/src-tauri/target/
+gui-tauri/node_modules/
+gui-tauri/dist/
 
 # OS
 .DS_Store
@@ -28,4 +28,3 @@ desktop.ini
 *.ps1xml
 *.psd1
 *.psm1  # We use dot-source, not modules
-publish/

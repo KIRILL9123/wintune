@@ -159,6 +159,46 @@
       "detect": "Get-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\DataCollection' -Name 'AllowTelemetry' -ErrorAction SilentlyContinue",
       "buildMin": 22000,
       "buildMax": 0
+    },
+    {
+      "id": "disable-visual-effects",
+      "type": "registry",
+      "name": "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VisualEffects\\VisualFXSetting",
+      "detect": "Get-ItemProperty -Path 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VisualEffects' -Name 'VisualFXSetting' -ErrorAction SilentlyContinue",
+      "buildMin": 22000,
+      "buildMax": 0
+    },
+    {
+      "id": "disable-startup-delay",
+      "type": "registry",
+      "name": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Serialize\\StartupDelayInMSec",
+      "detect": "Get-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Serialize' -Name 'StartupDelayInMSec' -ErrorAction SilentlyContinue",
+      "buildMin": 22000,
+      "buildMax": 0
+    },
+    {
+      "id": "disable-transparency",
+      "type": "registry",
+      "name": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize\\EnableTransparency",
+      "detect": "Get-ItemProperty -Path 'HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize' -Name 'EnableTransparency' -ErrorAction SilentlyContinue",
+      "buildMin": 22000,
+      "buildMax": 0
+    },
+    {
+      "id": "disable-taskbar-news",
+      "type": "registry",
+      "name": "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Feeds\\ShellFeedsTaskbarViewMode",
+      "detect": "Get-ItemProperty -Path 'HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Feeds' -Name 'ShellFeedsTaskbarViewMode' -ErrorAction SilentlyContinue",
+      "buildMin": 22000,
+      "buildMax": 0
+    },
+    {
+      "id": "disable-lockscreen-suggestions",
+      "type": "registry",
+      "name": "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent\\DisableSoftLanding",
+      "detect": "Get-ItemProperty -Path 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent' -Name 'DisableSoftLanding' -ErrorAction SilentlyContinue",
+      "buildMin": 22000,
+      "buildMax": 0
     }
   ],
   "commands": [
@@ -167,6 +207,14 @@
       "type": "command",
       "name": "Hibernation",
       "detect": "powercfg /a | Select-String -Pattern 'Hibernation' -SimpleMatch",
+      "buildMin": 22000,
+      "buildMax": 0
+    },
+    {
+      "id": "enable-high-performance-power",
+      "type": "command",
+      "name": "High Performance Power Plan",
+      "detect": "powercfg /l | Select-String -Pattern 'High performance' -SimpleMatch",
       "buildMin": 22000,
       "buildMax": 0
     }

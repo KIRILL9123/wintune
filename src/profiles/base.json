@@ -1,6 +1,6 @@
 {
   "name": "base",
-  "description": "Common debloat inherited by all profiles. Removes universal bloatware, disables telemetry and ads.",
+  "description": "Common debloat inherited by all profiles. Removes universal bloatware, disables telemetry, ads, and visual clutter.",
   "inherits": null,
   "tweaks": [
     "remove-bing-news",
@@ -14,7 +14,12 @@
     "disable-dps",
     "disable-ads-id",
     "disable-consent-appraiser",
-    "disable-ceip-task"
+    "disable-ceip-task",
+    "disable-visual-effects",
+    "disable-startup-delay",
+    "disable-transparency",
+    "disable-taskbar-news",
+    "disable-lockscreen-suggestions"
   ],
   "preserve": [],
   "dangerous": false

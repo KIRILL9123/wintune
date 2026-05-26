@@ -84,7 +84,7 @@ function Get-WindowsBuild {
     return [Environment]::OSVersion.Version.Build
 }
 
-$requiresAdmin = $Action -in @('Audit', 'Apply', 'Revert')
+$requiresAdmin = $Action -in @('Apply', 'Revert')
 if ($requiresAdmin -and -not (Test-Admin)) {
     $msg = "Administrator rights required. Please run PowerShell as Administrator."
     if ($OutputJson) {

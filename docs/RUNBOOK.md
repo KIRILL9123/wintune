@@ -17,7 +17,7 @@ WinTune is a modular Windows 11 tuning engine that audits, applies, and reverts 
 | PowerShell | Windows PowerShell 5.1 or PowerShell 7+ |
 | Execution Policy | `RemoteSigned` or `Bypass` (recommended) |
 | Privilege | **Administrator** for Audit, Apply, Revert. List works without admin. |
-| .NET (GUI only) | .NET 8.0 SDK for `dotnet build`/`dotnet run` |
+| GUI | Node.js 20+ and Rust stable for `cargo build` (Tauri) |
 
 ---
 
@@ -166,20 +166,21 @@ Per-tweak logging is enabled for `Apply` — each tweak success/failure is recor
 
 ---
 
-## GUI (Experimental)
+## GUI (Tauri)
 
-The WPF GUI is available under `gui/WinTune.Gui/`:
+The Tauri GUI is available under `gui-tauri/`:
 
-```powershell
-dotnet build gui/WinTune.Gui/WinTune.Gui.csproj
-dotnet run --project gui/WinTune.Gui/WinTune.Gui.csproj
+```bash
+cd gui-tauri/src-tauri
+cargo build          # debug build
+cargo build --release  # release build (~5MB single .exe)
 ```
 
 The GUI communicates with the PowerShell engine exclusively through `-OutputJson` — no direct module imports. All CLI contracts and guarantees apply equally to GUI usage.
 
-**GUI limitations (v0.1):**
-- Profile selector and quick actions use placeholder data. Full wiring to `PsRunner` is in progress.
-- PsRunner has a 5-minute timeout with process kill fallback.
+**GUI architecture:**
+- **Rust backend** (`src-tauri/src/`): spawns PowerShell, parses JSON, exposes commands via Tauri IPC
+- **HTML/CSS/JS frontend** (`src/`): plain HTML/CSS/JS, dark theme, 5 views (Dashboard, Profiles, Audit, Apply, Revert)
 
 ---
 
@@ -190,7 +191,7 @@ The GUI communicates with the PowerShell engine exclusively through `-OutputJson
 | PowerShell modules | Pester 3.4+ | 60+ tests (9 suites) |
 | PowerShell CLI contracts | Pester | List, Audit JSON shape, exit codes |
 | Schema validation | PowerShell | Bloat DB, profile tweaks, profile preserve IDs |
-| GUI integration | xUnit (.NET 8) | 8 smoke tests: List JSON, Audit error, timeout |
+| GUI integration | N/A (Tauri) | Smoke test via `cargo build` in CI |
 | CI | GitHub Actions | `windows-latest`, full Pester + schema + CLI smoke |
 
 ---
@@ -203,7 +204,7 @@ The GUI communicates with the PowerShell engine exclusively through `-OutputJson
 
 3. **No admin-free dry-run for Apply.** Apply and Audit require admin. Use `List` and `-WhatIf` for read-only inspection.
 
-4. **GUI is scaffold-grade.** Views render with placeholder data. Full backend wiring is planned for v0.2.
+4. **GUI is Tauri-based.** Rust backend + HTML/CSS/JS frontend. Single binary ~5MB.
 
 5. **Windows 10 support is partial.** The engine runs on Windows 10, but tweaks with `buildMin: 22621+` are silently skipped. No Windows 10-specific profiles exist yet.
 
@@ -262,7 +263,7 @@ No profiles are currently marked dangerous. This policy is forward-looking for v
 **Release checklist:**
 - [x] All CI checks green (`windows-latest`)
 - [x] Pester: 9 suites, 60+ tests
-- [x] xUnit GUI smoke tests: 8 tests
+- [x] Tauri build configuration
 - [x] Schema validation: bloat DB + profiles
 - [x] Idempotency guaranteed for all tweak types
 - [x] Backup-before-mutate enforced

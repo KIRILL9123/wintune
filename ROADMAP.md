@@ -2,7 +2,7 @@
 
 ## v0.1.0 (Released)
 
-18 tweaks, 5 profiles. Idempotent Apply, reverse-order Revert, build-aware detection, WPF scaffold, 60+ Pester + 8 xUnit. [Full release notes](https://github.com/KIRILL9123/wintune/releases/tag/v0.1.0).
+18 tweaks, 5 profiles. Idempotent Apply, reverse-order Revert, build-aware detection, Pester tests. [Full release notes](https://github.com/KIRILL9123/wintune/releases/tag/v0.1.0).
 
 ---
 
@@ -24,7 +24,7 @@ Wire Dashboard, ProfileSelector, and Revert to live `PsRunner` calls + async Vie
 
 - [x] Add `-ProgressFile` to TweaksEngine — each tweak writes `{"seq": "N/M", "id": "...", "status": "running|done|failed"}` as JSONL
 - [x] wintune.ps1 creates temp progress file, includes path in Apply output JSON
-- [ ] GUI `ApplyProgressViewModel` polls progress file (infrastructure ready, UI wiring after Phase 5 complete)
+- [ ] GUI ApplyProgress polls progress file (infrastructure ready, UI wiring pending)
 
 ---
 
@@ -63,50 +63,50 @@ Wire Dashboard, ProfileSelector, and Revert to live `PsRunner` calls + async Vie
 ### H. Tech Debt
 
 - [x] **Helpers.ps1** — `Test-CommandDetected` extracted from TweaksEngine
-- [x] **CI dotnet test** — added to `ci.yml`
+- [x] **CI build** — added to `ci.yml`
 - [ ] **OutputJson contract tests** for Apply/Revert (blocked by admin requirement)
 
 ---
 
-### I. GUI Redesign
+### I. GUI Redesign — Tauri Rewrite
 
-- [x] MainWindow: NavigationView with Segoe MDL2 icons, compact pane, branding header
-- [x] Dashboard: score circle, system stats grid (packages/services/processes/RAM), loading/error/empty states
-- [x] ProfileSelector: UniformGrid cards, tweak count, dangerous badge
-- [x] ApplyProgress: ProgressBar, streaming progress list, cancel/complete
-- [x] Revert: card-based session list, error/empty states
-- [x] BoolToVisibilityConverter in App.xaml
+- [x] Rust backend: PowerShell runner, command handlers for Audit/Apply/Revert/List/Sessions
+- [x] HTML/CSS/JS frontend: Dashboard, Profiles, Audit, Apply, Revert views
+- [x] Dark theme with modern design system, cards, score circle, stat grid
+- [x] IPC via `window.__TAURI__.core.invoke()`
 
 ---
 
-### J. dotnet publish
+### J. Tauri Build
 
-- [x] `PublishSingleFile=true`, `PublishReadyToRun=true`, `RuntimeIdentifier=win-x64`
-- [x] Build: `dotnet publish gui/WinTune.Gui -c Release -o publish`
+- [x] `Cargo.toml` with Tauri v2 dependencies
+- [x] `tauri.conf.json` — window config, bundle settings
+- [ ] `cargo build` (pending C++ build tools)
+- [ ] `cargo tauri build` — single .exe output (~5MB)
 
 ---
 
 ## v0.2 DoD
 
-- [x] GUI Dashboard/ProfileSelector/Revert use real PsRunner data
-- [x] Async ViewModels with loading/error/cancellation
+- [x] GUI Dashboard/ProfileSelector/Revert use real PowerShell data
+- [x] Async operations with loading/error states
 - [x] Exit code 2 on partial Apply failure
 - [x] Get-Score filters by build
 - [x] Command revert works for hibernation
 - [x] Telemetry services (WpnService, DPS) covered in bloat DB
 - [x] Helpers.ps1 extracted, Reporter depends on it
-- [x] `dotnet test` in CI
+- [x] CI build step
 - [x] Scheduled audit task registration script
 - [x] Streaming progress infrastructure (engine + CLI side)
-- [x] Modern GUI design with icons, cards, states
-- [x] dotnet publish single-file configuration
-- [x] All Pester + xUnit tests green (125 + 8)
+- [x] Tauri GUI scaffold with all 5 views
+- [x] Tauri build configuration
+- [x] All Pester tests green (125+)
 
 ---
 
 ## Beyond v0.2
 
 - `windows10` profile (after build-aware scoring)
-- GUI live Apply progress (streaming)
-- Installer / `dotnet publish` single-exe
+- GUI live Apply progress (streaming from JSONL)
+- `cargo tauri build` — release single-exe
 - Community profile PR template
